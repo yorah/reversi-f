@@ -12,7 +12,13 @@
 ; on the veswiki, and inspiration from the examples there (especially the
 ; pacman port by Blackbird and e5frog).
 ;
-                                             
+
+; TODO
+; draw sidebar
+; draw player turn
+; draw current score
+; IDEAS
+; in draw board, use a subroutine to draw horizontal lines (need kstack)
  
     processor f8
 
@@ -74,6 +80,7 @@ main.startgame.drawScreen
 	pi board.draw
 
 	; draw sidebar
+
 
 	; draw players scores
 
