@@ -14,7 +14,6 @@
 ;
 
 ; TODO
-; draw sidebar
 ; draw player turn
 ; draw current score
 ; IDEAS
@@ -77,17 +76,51 @@ main.startgame.clearBoardBuffer5057:
 
 main.startgame.drawScreen
 	; draw board
-	pi board.draw
+	pi 		board.draw
 
 	; draw sidebar
-
+	pi 		sidebar.draw
 
 	; draw players scores
 
-	jmp main.startgame.drawScreen
+	jmp 	main.startgame.drawScreen
 
 
+;**********************y2j********************************************************
+;* DRAW SIDEBAR
 ;******************************************************************************
+
+sidebar.draw:
+	lr 		K, P
+
+	; blue color
+	li 		$80
+	lr 		1, A
+
+	; start from row 57 (bottom)
+	li 		57
+	lr 		3, A
+sidebar.draw.row.loop:
+	; draw from column 101
+	li		101
+	lr		2, A
+sidebar.draw.column.loop:
+	pi 		plot
+	ds 		2		; move left
+	lr		A, 2
+	ci		64		; check if we reached column 64
+	bnz 	sidebar.draw.column.loop
+	ds 		3		; move up
+	bc 		sidebar.draw.row.loop
+
+	; draw "Turn"
+	dci gfx.turn.parameters
+	pi blitGraphic
+
+sidebar.drawEnd:
+	pk
+
+;**********************y2j********************************************************
 ;* DRAW BOARD
 ;******************************************************************************
 
@@ -105,7 +138,7 @@ board.draw:
 	li 		57
 	lr 		5, A
 
-board.draw.topAndBottomLines:
+board.draw.topAndBottomLines.loop:
 	lr 		A, 4
 	ai		4
 	lr 		2, A
@@ -133,15 +166,15 @@ board.draw.topAndBottomLines:
 	lr 		3, A
 	pi		plot
 
-	ds 4
-	bz board.draw.vertLines
+	ds 		4
+	bz 		board.draw.vertLines
 
-	li	$ff
-board.draw.topLine.delay
+	li		$ff
+board.draw.topAndBottomLines.delay
 	ai		$ff
-	bnz		board.draw.topLine.delay
+	bnz		board.draw.topAndBottomLines.delay
 
-	br board.draw.topAndBottomLines
+	br 		board.draw.topAndBottomLines.loop
 
 board.draw.vertLines:
 	; plot missing left pixels from top/bottom
@@ -160,8 +193,6 @@ board.draw.vertLines:
 	li 		28
 	lr 		4, A	; left side
 	lr 		5, A	; right side
-	li 		29
-	lr 		8, A	; used to calculate right side
 
 	; first y position (r6 top, r7 bottom)
 	lis 	5
@@ -216,16 +247,14 @@ board.draw.vertLines.loop:
 	ds		4
 	ds		4
 	ds		4
-	bz board.draw.vertLines.checkHorizontalLine
-	jmp board.draw.vertLines.loop
+	bz 		board.draw.vertLines.checkHorizontalLine
+	jmp 	board.draw.vertLines.loop
 
 board.draw.vertLines.checkHorizontalLine:
-	lr 		A, 9
-	ai 		$ff
-	bz board.draw.vertLines.horizontalLine
+	ds		9
+	bz 		board.draw.vertLines.horizontalLine
 
-	lr 		9, A
-	jmp board.draw.vertLines.nextLine
+	jmp 	board.draw.vertLines.nextLine
 
 board.draw.vertLines.horizontalLine:
 	lr 		A, 10
@@ -272,12 +301,12 @@ board.draw.vertLines.nextLine:
 
 	lis 	4
 	lr 		2, A
-	pi plot
+	pi 		plot
 
 	; right side
 	li 		60
 	lr 		2, A
-	pi plot
+	pi 		plot
 
 	lr 		A, 6
 	com
@@ -296,31 +325,32 @@ board.draw.vertLines.nextLine:
 	lr 		6, A
 
 	; check if we reached middle of vertical lines
-	lr 		A, 6
-	com
-	ai 		1
-	as 		8
-	bz board.draw.end
+	ci 		29
+	bz 		board.drawEnd
 
 	li 		28
 	lr 		4, A
 	lr 		5, A
 
-	li	$ff
+	li		$ff
 board.draw.vertLines.delay
 	ai		$ff
 	bnz		board.draw.vertLines.delay
 
-	jmp board.draw.vertLines.loop
+	jmp 	board.draw.vertLines.loop
 
-board.draw.end:
+board.drawEnd:
 	pk
+
 
 ;******************************************************************************
 ;* INCLUDES
 ;******************************************************************************
+	; drawing subroutines
 	include "drawing.inc"
 
+	; graphics data
+	include "graphics.inc"
 
 ; Padding
 	org $fff
