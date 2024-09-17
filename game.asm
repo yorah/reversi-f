@@ -16,8 +16,12 @@
 ; TODO
 ; draw player turn
 ; draw current score
+; IMPROVEMENTS
+; decoupling of blinking and debouncing
 ; IDEAS
 ; in draw board, use a subroutine to draw horizontal lines (need kstack)
+; in draw selection, use subroutine to draw selection instead of macro (need kstack)
+; animate pieces flipping
  
     processor f8
 
@@ -25,10 +29,16 @@
 	include "ves.h"
 
 ; Constants
+BLINK_LOOPS			= 12		; time to loop before changing color for blinking effect
 
 ; Registers used
-INTERNAL_COUNTER 	= 30
-PLAYER_TURN 		= 31
+
+BLINK_COLOR			= 29	; color in use for blinking effect
+BLINK_COUNTER		= 30	; counter for blinking effect
+PLAYER_STATE 		= 31	; first (higher) 3 bits are the X selection position
+							; next 3 bits are the Y selection position
+							; next 1 bit is the debounce flag (to prevent too fast input)
+							; last bit is the player turn (0 = player 1, 1 = player 2)
 BOARD_STATE 		= 32	; 16 bytes for the board state, ranging from r32 to r47
 							; corresponding to ISAR 40-47 and 50-57
 
@@ -61,8 +71,16 @@ main:
 ;******************************************************************************
 
 main.startgame.init:
-	; init starting board state, clear r40-47 first
+	li 		BLINK_LOOPS
+	SETISAR BLINK_COUNTER
+	lr 		S, A
+	
+	li 		%01101100	; X=4, Y=4, player 1 starts
+	SETISAR PLAYER_STATE
+	lr		S, A
+
 	clr
+	; init starting board state, clear r40-47 first
 	lisu 	4
 	lisl 	7
 main.startgame.clearBoardBuffer4047:
@@ -83,10 +101,264 @@ main.startgame.drawScreen
 
 	; draw players scores
 
-	jmp 	main.startgame.drawScreen
+
+;******************************************************************************
+;* NEW GAME
+;******************************************************************************
+
+game.loop:
+	pi	game.slotSelection
+
+game.loop.waitInput:
+
+game.loop.end:
+	jmp 	game.loop
 
 
-;**********************y2j********************************************************
+;******************************************************************************
+;* SLOT SELECTION
+;******************************************************************************
+
+	MAC CLEAR_SELECTION
+	SETISAR BLINK_COLOR
+	li 		$80
+	lr 		S, A
+
+	SETISAR BLINK_COUNTER
+	li 		BLINK_LOOPS
+	lr 		S, A
+
+	DRAW_SELECTION
+	ENDM
+
+	MAC DRAW_SELECTION
+	li 		$ff
+	lr 		0, A
+	SETISAR BLINK_COLOR
+	lr 		A, S
+	lr 		1, A
+	; calculate X position
+	SETISAR PLAYER_STATE
+	lr 		A, S
+	ni 		%11100000
+	sr		4
+	sr	    1
+	com
+	ai 		1
+	lr		2, A
+	lr 		A, S
+	ni 		%11100000
+	sr 		1
+	sr 		1
+	as 		2
+	ai 		4
+	lr 		2, A		; store X in r2
+
+	; calculate Y position
+	lr 		A, S
+	ni 		%00011100
+	sr		1
+	com
+	ai 		1
+	lr		3, A
+	lr 		A, S
+	ni 		%00011100
+	sl 		1
+	as 		3
+	ai 		4
+	lr 		3, A		; store Y in r3
+	pi slotSelection.draw
+	ENDM
+
+	MAC UPDATE_Y_POSITION
+	SETISAR PLAYER_STATE
+	lr 		A, S
+	ni		%00011100
+	sr		1
+	sr		1
+	ai 		{1}
+	ni 		%00000111
+	sl 		1
+	sl 		1
+	lr 		0, A	; store new Y position
+	lr		A, S
+	ni 		%11100011	; clear Y position
+	xs		0
+	lr		S, A
+	jmp game.slotSelection.handleInput.end
+	ENDM
+
+	MAC UPDATE_X_POSITION
+	SETISAR PLAYER_STATE
+	lr 		A, S
+	ni		%11100000
+	sr		4
+	sr		1
+	ai 		{1}
+	ni 		%00000111
+	sl 		4
+	sl 		1
+	lr 		0, A	; store new Y position
+	lr		A, S
+	ni 		%00011111	; clear Y position
+	xs		0
+	lr		S, A
+	jmp game.slotSelection.handleInput.end
+	ENDM
+
+game.slotSelection:
+	lr 		K, P
+
+game.slotSelection.draw:
+	DRAW_SELECTION
+
+game.slotSelection.blinkDelay:
+	; delay for blinking effect
+	li		$08
+	lr 		5, A
+	pi 		BIOS_DELAY
+
+game.slotSelection.readController:
+	; if debounce flag is set, wait for it to be cleared
+	SETISAR PLAYER_STATE
+	lr 		A, S
+	ni 		%00000010
+	bnz 	game.slotSelection.readController.skip
+
+	clr
+	outs 	0		; enable input from controllers (related to bit6 of port0?)
+	outs	1		; clear port1 (right controller	)
+	ins   	1		; read right controller first (requires half the CPU cycles than reading left controller on port 4 
+	com				; invert bits, so that 1 means button pressed
+	ni 		%10001111	; mask out twists and pullup
+	bnz 	game.slotSelection.handleInput	; if button pressed, no need to read other controller	
+	outs 	4		; clear port4 (left controller)
+	ins  	4		; read left controller
+	com				; invert bits, so that 1 means button pressed
+	ni 		%10001111	; mask out twists and pullup
+	bnz 	game.slotSelection.handleInput	; if button pressed, no need to read other controller
+	jmp 	game.slotSelection.checkBlink
+
+game.slotSelection.readController.skip:
+	jmp 	game.slotSelection.checkBlink
+
+game.slotSelection.handleInput:
+	; button pressed
+	ni %00001111
+	;bz program.loop.handleInput.changeColor
+	
+	; It was a direction, clear previous selection
+	lr 		10, A
+	CLEAR_SELECTION
+	lr 		A, 10
+
+	; test up direction
+	ni %00000111
+	bz game.slotSelection.handleInput.up
+	; test down direction
+	ni %00000011
+	bz game.slotSelection.handleInput.down
+	; test left direction
+	ni %00000001
+	bz game.slotSelection.handleInput.left
+	; right direction (only one left, and we know something was pressed)
+	jmp game.slotSelection.handleInput.right
+
+game.slotSelection.handleInput.up:
+	UPDATE_Y_POSITION $ff
+game.slotSelection.handleInput.down:
+	UPDATE_Y_POSITION $01
+game.slotSelection.handleInput.left:
+	UPDATE_X_POSITION $ff
+game.slotSelection.handleInput.right:
+	UPDATE_X_POSITION $01
+
+game.slotSelection.handleInput.end:
+	; set debounce flag to prevent too fast input
+	SETISAR PLAYER_STATE
+	lr 		A, S
+	oi 		%00000010
+	lr 		S, A
+
+	SETISAR BLINK_COLOR
+	jmp game.slotSelection.switchBlinkingColor.toPlayerColor
+
+game.slotSelection.checkBlink:
+	SETISAR	BLINK_COUNTER
+	ds		S
+	bz		game.slotSelection.switchBlinkingColor
+	jmp 	game.slotSelection.blinkDelay
+
+game.slotSelection.switchBlinkingColor:
+	; reset blink_counter to blink_loops count
+	; relies on SETISAR BLINK_COUNTER being called prior to this
+	li 		BLINK_LOOPS
+	lr 		S, A
+
+	; clear debounce flag
+	SETISAR PLAYER_STATE
+	lr 		A, S
+	ni 		%11111101
+	lr 		S, A
+
+	SETISAR BLINK_COLOR
+	lr 		A, S
+	ci 		$80
+	bz		game.slotSelection.switchBlinkingColor.toPlayerColor	; switch to player color
+	li 		$80		; else switch to clear blinking color (blue, as the board is blue)
+	lr 		S, A
+	jmp 	game.slotSelection.draw
+
+game.slotSelection.switchBlinkingColor.toPlayerColor:
+	li 		COLOR_GREEN
+	lr 		S, A
+	jmp 	game.slotSelection.draw
+
+game.slotSelection.switchBlinkingColor.end:
+	jmp 		game.slotSelection.draw
+
+game.slotSelection.end:
+	pk
+
+
+;******************************************************************************
+;* SPRITE SLOT SELECTION DRAWING
+;******************************************************************************
+; r0 = color 1
+; r1 = color 2
+; r2 = x position
+; r3 = y position
+
+slotSelection.draw:
+	; blit reference:
+	; r1 = color 1 (off)
+	; r2 = color 2 (on)
+	; r3 = x position
+	; r4 = y position
+	; r5 = width
+	; r6 = height
+
+	lis 	8
+	lr 		5, A
+	lis 	7
+	lr 		6, A
+	; position
+	lr 		A, 3
+	lr 		4, A
+	lr 		A, 2
+	lr 		3, A
+	; colors
+	lr 		A, 1
+	lr 		2, A
+	lr		A, 0
+	lr		1, A
+	
+	; draw slot selection
+	dci		gfx.slotSelection.data
+	jmp blit
+
+
+;******************************************************************************
 ;* DRAW SIDEBAR
 ;******************************************************************************
 
@@ -120,7 +392,8 @@ sidebar.draw.column.loop:
 sidebar.drawEnd:
 	pk
 
-;**********************y2j********************************************************
+
+;******************************************************************************
 ;* DRAW BOARD
 ;******************************************************************************
 
