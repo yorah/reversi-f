@@ -36,3 +36,41 @@ gfx.turn.data:
 	.byte	%01001010, %10101010
 	.byte	%01001010, %11001010
 	.byte	%01001110, %10101010
+
+;---------------------------------------------------------------------------
+; "P1" Lettering
+;---------------------------------------------------------------------------
+
+gfx.p1.parameters:
+	.byte	BOARD_COLOR		; color 1 (clear color)
+	.byte	PLAYER1_COLOR	; color 2
+	.byte	80			; x position
+	.byte	9			; y position
+	.byte	8			; width
+	.byte	4			; height
+	.word	gfx.p1.data		; address for the graphics
+
+gfx.p1.data:
+	.byte	%11000100
+	.byte	%10101100
+	.byte	%11000100
+	.byte	%10001110
+
+;---------------------------------------------------------------------------
+; "P2" Lettering
+;---------------------------------------------------------------------------
+
+gfx.p2.parameters:
+	.byte	BOARD_COLOR			; color 1 (clear color)
+	.byte	PLAYER2_COLOR	; color 2
+	.byte	80			; x position
+	.byte	9			; y position
+	.byte	8			; width
+	.byte	4			; height
+	.word	gfx.p2.data		; address for the graphics
+
+gfx.p2.data:
+	.byte	%11001100
+	.byte	%10100010
+	.byte	%11000100
+	.byte	%10001110

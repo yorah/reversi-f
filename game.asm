@@ -29,7 +29,11 @@
 	include "ves.h"
 
 ; Constants
-BLINK_LOOPS			= 12		; time to loop before changing color for blinking effect
+BLINK_LOOPS			= 12	; time to loop before changing color for blinking effect
+BOARD_COLOR			= COLOR_BLUE		; board color
+PLAYER1_COLOR		= COLOR_GREEN		; player 1 color
+PLAYER2_COLOR		= COLOR_RED			; player 2 color
+
 
 ; Registers used
 
@@ -70,7 +74,7 @@ main:
 ;* NEW GAME
 ;******************************************************************************
 
-main.startgame.init:
+newgame.init:
 	li 		BLINK_LOOPS
 	SETISAR BLINK_COUNTER
 	lr 		S, A
@@ -83,33 +87,36 @@ main.startgame.init:
 	; init starting board state, clear r40-47 first
 	lisu 	4
 	lisl 	7
-main.startgame.clearBoardBuffer4047:
+newgame.clearBoardBuffer4047:
 	lr 		D, A
-	br7 	main.startgame.clearBoardBuffer4047
+	br7 	newgame.clearBoardBuffer4047
 	; clear r50-57
 	lisu 	5
-main.startgame.clearBoardBuffer5057:
+newgame.clearBoardBuffer5057:
 	lr 		D, A
-	br7 	main.startgame.clearBoardBuffer5057
+	br7 	newgame.clearBoardBuffer5057
 
-main.startgame.drawScreen
+newgame.drawScreen
 	; draw board
 	pi 		board.draw
 
 	; draw sidebar
 	pi 		sidebar.draw
 
-	; draw players scores
+	; init sidebar
+	SETISAR PLAYER_STATE
+	lr 		A, S
+	ni 		%00000001
+	bnz 	newgame.drawScreen.initSidebar.player2
+	dci 	gfx.p1.parameters
+	pi 		blitGraphic
+	jmp 	newgame.drawScreen.initSidebar.end
+newgame.drawScreen.initSidebar.player2:
+	dci 	gfx.p2.parameters
+	pi 		blitGraphic
+newgame.drawScreen.initSidebar.end:
 
-
-;******************************************************************************
-;* NEW GAME
-;******************************************************************************
-
-newgame.loop:
 	pi	game.loop
-
-newgame.loop.waitInput:
 
 newgame.loop.end:
 	jmp 	game.loop
@@ -121,7 +128,7 @@ newgame.loop.end:
 
 	MAC CLEAR_SELECTION
 	SETISAR BLINK_COLOR
-	li 		$80
+	li 		BOARD_COLOR
 	lr 		S, A
 
 	SETISAR BLINK_COUNTER
@@ -243,15 +250,14 @@ game.loop.readController.skip:
 	jmp 	game.loop.blink.check
 
 game.loop.handleInput:
-	; button pressed
-	ni %00001111
-	;bz program.loop.handleInput.changeColor
-	
-	; It was a direction, clear previous selection
+	; clear previous selection
 	lr 		10, A
 	CLEAR_SELECTION
 	lr 		A, 10
 
+	; button pressed
+	ni %00001111
+	bz game.loop.handleInput.placePiece
 	; test up direction
 	ni %00000111
 	bz game.loop.handleInput.up
@@ -264,6 +270,8 @@ game.loop.handleInput:
 	; right direction (only one left, and we know something was pressed)
 	jmp game.loop.handleInput.right
 
+game.loop.handleInput.placePiece:
+	jmp game.loop.placePiece
 game.loop.handleInput.up:
 	UPDATE_Y_POSITION $ff
 game.loop.handleInput.down:
@@ -280,7 +288,6 @@ game.loop.handleInput.end:
 	oi 		%00000010
 	lr 		S, A
 
-	SETISAR BLINK_COLOR
 	jmp game.loop.blink.switchToPlayerColor
 
 game.loop.blink.check:
@@ -303,20 +310,55 @@ game.loop.blink.switchColor:
 
 	SETISAR BLINK_COLOR
 	lr 		A, S
-	ci 		$80
+	ci 		BOARD_COLOR
 	bz		game.loop.blink.switchToPlayerColor	; switch to player color
-	li 		$80		; else switch to clear blinking color (blue, as the board is blue)
+	li 		BOARD_COLOR	; else switch to clear blinking color (blue, as the board is blue)
 	lr 		S, A
 	jmp 	game.loop.slotSelection
 
 game.loop.blink.switchToPlayerColor:
-	li 		COLOR_GREEN
+	SETISAR PLAYER_STATE
+	lr 		A, S
+	ni 		%00000001
+	bnz 		game.loop.blink.switchToPlayerColor.player2
+	li 		PLAYER1_COLOR
+	jmp 	game.loop.blink.switchToPlayerColor.end
+game.loop.blink.switchToPlayerColor.player2:
+	li 		PLAYER2_COLOR
+game.loop.blink.switchToPlayerColor.end:
+	SETISAR BLINK_COLOR
 	lr 		S, A
 	jmp 	game.loop.slotSelection
 
 game.loop.end:
 	pk
 
+;******************************************************************************
+;* PLACE PIECE
+;******************************************************************************
+
+game.loop.placePiece:
+
+game.loop.changePlayer:
+	; change player turn
+	SETISAR PLAYER_STATE
+	lr 		A, S
+	xi 		%00000001
+	lr 		S, A
+
+	; update sidebar
+	ni 		%00000001
+	bnz 	game.loop.changePlayer.updateSidebar.player2
+	dci 	gfx.p1.parameters
+	pi 		blitGraphic
+	jmp 	game.loop.changePlayer.updateSidebar.end
+game.loop.changePlayer.updateSidebar.player2:
+	dci 	gfx.p2.parameters
+	pi 		blitGraphic
+game.loop.changePlayer.updateSidebar.end:
+
+game.loop.placePiece.end:
+	jmp game.loop.handleInput.end
 
 ;******************************************************************************
 ;* SPRITE SLOT SELECTION DRAWING
@@ -352,7 +394,7 @@ slotSelection.draw:
 	
 	; draw slot selection
 	dci		gfx.slotSelection.data
-	jmp blit
+	jmp 	blit
 
 
 ;******************************************************************************
@@ -363,7 +405,7 @@ sidebar.draw:
 	lr 		K, P
 
 	; blue color
-	li 		$80
+	li 		BOARD_COLOR
 	lr 		1, A
 
 	; start from row 57 (bottom)
@@ -383,8 +425,8 @@ sidebar.draw.column.loop:
 	bc 		sidebar.draw.row.loop
 
 	; draw "Turn"
-	dci gfx.turn.parameters
-	pi blitGraphic
+	dci 	gfx.turn.parameters
+	pi 		blitGraphic
 
 sidebar.drawEnd:
 	pk
@@ -398,7 +440,7 @@ board.draw:
 	lr 		K, P
 
 	; blue color
-	li 		$80
+	li 		BOARD_COLOR
 	lr 		1, A
 
 	; draw top line, starting from middle (55 width)
