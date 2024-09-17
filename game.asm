@@ -106,12 +106,12 @@ main.startgame.drawScreen
 ;* NEW GAME
 ;******************************************************************************
 
-game.loop:
-	pi	game.slotSelection
+newgame.loop:
+	pi	game.loop
 
-game.loop.waitInput:
+newgame.loop.waitInput:
 
-game.loop.end:
+newgame.loop.end:
 	jmp 	game.loop
 
 
@@ -185,7 +185,7 @@ game.loop.end:
 	ni 		%11100011	; clear Y position
 	xs		0
 	lr		S, A
-	jmp game.slotSelection.handleInput.end
+	jmp game.loop.handleInput.end
 	ENDM
 
 	MAC UPDATE_X_POSITION
@@ -203,27 +203,27 @@ game.loop.end:
 	ni 		%00011111	; clear Y position
 	xs		0
 	lr		S, A
-	jmp game.slotSelection.handleInput.end
+	jmp game.loop.handleInput.end
 	ENDM
 
-game.slotSelection:
+game.loop:
 	lr 		K, P
 
-game.slotSelection.draw:
+game.loop.slotSelection:
 	DRAW_SELECTION
 
-game.slotSelection.blinkDelay:
+game.loop.slotSelection.blinkDelay:
 	; delay for blinking effect
 	li		$08
 	lr 		5, A
 	pi 		BIOS_DELAY
 
-game.slotSelection.readController:
+game.loop.readController:
 	; if debounce flag is set, wait for it to be cleared
 	SETISAR PLAYER_STATE
 	lr 		A, S
 	ni 		%00000010
-	bnz 	game.slotSelection.readController.skip
+	bnz 	game.loop.readController.skip
 
 	clr
 	outs 	0		; enable input from controllers (related to bit6 of port0?)
@@ -231,18 +231,18 @@ game.slotSelection.readController:
 	ins   	1		; read right controller first (requires half the CPU cycles than reading left controller on port 4 
 	com				; invert bits, so that 1 means button pressed
 	ni 		%10001111	; mask out twists and pullup
-	bnz 	game.slotSelection.handleInput	; if button pressed, no need to read other controller	
+	bnz 	game.loop.handleInput	; if button pressed, no need to read other controller	
 	outs 	4		; clear port4 (left controller)
 	ins  	4		; read left controller
 	com				; invert bits, so that 1 means button pressed
 	ni 		%10001111	; mask out twists and pullup
-	bnz 	game.slotSelection.handleInput	; if button pressed, no need to read other controller
-	jmp 	game.slotSelection.checkBlink
+	bnz 	game.loop.handleInput	; if button pressed, no need to read other controller
+	
 
-game.slotSelection.readController.skip:
-	jmp 	game.slotSelection.checkBlink
+game.loop.readController.skip:
+	jmp 	game.loop.blink.check
 
-game.slotSelection.handleInput:
+game.loop.handleInput:
 	; button pressed
 	ni %00001111
 	;bz program.loop.handleInput.changeColor
@@ -254,26 +254,26 @@ game.slotSelection.handleInput:
 
 	; test up direction
 	ni %00000111
-	bz game.slotSelection.handleInput.up
+	bz game.loop.handleInput.up
 	; test down direction
 	ni %00000011
-	bz game.slotSelection.handleInput.down
+	bz game.loop.handleInput.down
 	; test left direction
 	ni %00000001
-	bz game.slotSelection.handleInput.left
+	bz game.loop.handleInput.left
 	; right direction (only one left, and we know something was pressed)
-	jmp game.slotSelection.handleInput.right
+	jmp game.loop.handleInput.right
 
-game.slotSelection.handleInput.up:
+game.loop.handleInput.up:
 	UPDATE_Y_POSITION $ff
-game.slotSelection.handleInput.down:
+game.loop.handleInput.down:
 	UPDATE_Y_POSITION $01
-game.slotSelection.handleInput.left:
+game.loop.handleInput.left:
 	UPDATE_X_POSITION $ff
-game.slotSelection.handleInput.right:
+game.loop.handleInput.right:
 	UPDATE_X_POSITION $01
 
-game.slotSelection.handleInput.end:
+game.loop.handleInput.end:
 	; set debounce flag to prevent too fast input
 	SETISAR PLAYER_STATE
 	lr 		A, S
@@ -281,15 +281,15 @@ game.slotSelection.handleInput.end:
 	lr 		S, A
 
 	SETISAR BLINK_COLOR
-	jmp game.slotSelection.switchBlinkingColor.toPlayerColor
+	jmp game.loop.blink.switchToPlayerColor
 
-game.slotSelection.checkBlink:
+game.loop.blink.check:
 	SETISAR	BLINK_COUNTER
 	ds		S
-	bz		game.slotSelection.switchBlinkingColor
-	jmp 	game.slotSelection.blinkDelay
+	bz		game.loop.blink.switchColor
+	jmp 	game.loop.slotSelection.blinkDelay
 
-game.slotSelection.switchBlinkingColor:
+game.loop.blink.switchColor:
 	; reset blink_counter to blink_loops count
 	; relies on SETISAR BLINK_COUNTER being called prior to this
 	li 		BLINK_LOOPS
@@ -304,20 +304,17 @@ game.slotSelection.switchBlinkingColor:
 	SETISAR BLINK_COLOR
 	lr 		A, S
 	ci 		$80
-	bz		game.slotSelection.switchBlinkingColor.toPlayerColor	; switch to player color
+	bz		game.loop.blink.switchToPlayerColor	; switch to player color
 	li 		$80		; else switch to clear blinking color (blue, as the board is blue)
 	lr 		S, A
-	jmp 	game.slotSelection.draw
+	jmp 	game.loop.slotSelection
 
-game.slotSelection.switchBlinkingColor.toPlayerColor:
+game.loop.blink.switchToPlayerColor:
 	li 		COLOR_GREEN
 	lr 		S, A
-	jmp 	game.slotSelection.draw
+	jmp 	game.loop.slotSelection
 
-game.slotSelection.switchBlinkingColor.end:
-	jmp 		game.slotSelection.draw
-
-game.slotSelection.end:
+game.loop.end:
 	pk
 
 
