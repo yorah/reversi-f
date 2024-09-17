@@ -14,14 +14,20 @@
 ;
 
 ; TODO
-; draw player turn
 ; draw current score
+; place piece, check if valid move (all directions)
+; check if no valid moves left? or if both pass, stop? How to pass?
+
 ; IMPROVEMENTS
 ; decoupling of blinking and debouncing
+
 ; IDEAS
 ; in draw board, use a subroutine to draw horizontal lines (need kstack)
 ; in draw selection, use subroutine to draw selection instead of macro (need kstack)
 ; animate pieces flipping
+;
+; WTF moments
+; JMP does modify the accumulator (as stated by the doc, should have read it more carefully)
  
     processor f8
 
@@ -123,7 +129,7 @@ newgame.loop.end:
 
 
 ;******************************************************************************
-;* SLOT SELECTION
+;* PLAY GAME
 ;******************************************************************************
 
 	MAC CLEAR_SELECTION
@@ -173,8 +179,9 @@ newgame.loop.end:
 	sl 		1
 	as 		3
 	ai 		4
-	lr 		3, A		; store Y in r3
-	pi slotSelection.draw
+	lr 		3, A		; store Y in r3	
+	dci		gfx.slotSelection.data
+	pi slot.draw
 	ENDM
 
 	MAC UPDATE_Y_POSITION
@@ -245,12 +252,11 @@ game.loop.readController:
 	ni 		%10001111	; mask out twists and pullup
 	bnz 	game.loop.handleInput	; if button pressed, no need to read other controller
 	
-
 game.loop.readController.skip:
 	jmp 	game.loop.blink.check
 
 game.loop.handleInput:
-	; clear previous selection
+	; clear previous selection (should we use r10, or is it reserved for something else?)
 	lr 		10, A
 	CLEAR_SELECTION
 	lr 		A, 10
@@ -320,9 +326,9 @@ game.loop.blink.switchToPlayerColor:
 	SETISAR PLAYER_STATE
 	lr 		A, S
 	ni 		%00000001
-	bnz 		game.loop.blink.switchToPlayerColor.player2
+	bnz 	game.loop.blink.switchToPlayerColor.player2
 	li 		PLAYER1_COLOR
-	jmp 	game.loop.blink.switchToPlayerColor.end
+	br 		game.loop.blink.switchToPlayerColor.end
 game.loop.blink.switchToPlayerColor.player2:
 	li 		PLAYER2_COLOR
 game.loop.blink.switchToPlayerColor.end:
@@ -338,6 +344,135 @@ game.loop.end:
 ;******************************************************************************
 
 game.loop.placePiece:
+game.loop.placePiece.checkIfSlotEmpty:
+	; calculate index of wanted move
+	SETISAR PLAYER_STATE
+	lr 		A, S
+	ni 		%00011100	; get Y position
+	sl 		1			; multiply by 8 (2 sr 1 and 3 sl 1)
+	lr 		0, A		; store Y*8 in r0
+	lr 		A, S
+	ni 		%11100000	; get X position
+	sr 		4
+	sr 		1
+	as 		0			; add Y*8+X to get index of wanted move
+	lr 		0, A		; store index in r0
+
+	; calculate which register of BOARD_STATE to access
+	sr 		1			; divide by 4 to find register (each byte stores 4 slots of 2 bits)
+	sr 		1
+	ai		BOARD_STATE	; add 32 to get the register number
+	lr 		IS, A 		; set ISAR to the register number
+	lr  	4, A		; store register number in r4
+
+	; extract 2 bits from the register
+	lr		A, 0		; get index of wanted move
+	ni		%00000011	; find remainder of division by 4
+	sl		1			; multiply by 2 to get the bit position
+	lr 		1, A		; store bit position in r1
+	lr 		2, A		; store bit position in r2 (to put it back later)
+
+	ni 		%11111111	; check if byte is zero, no need to shift
+	lr 		A, S		; load byte from register
+	bz	 	game.loop.placePiece.bitOffset.end
+game.loop.placePiece.bitOffset:
+	sr		1			; shift to get the bit in the right position
+	ds		1			; count number of bits to offset
+	bnz		game.loop.placePiece.bitOffset
+game.loop.placePiece.bitOffset.end:
+
+	ni 		%00000011	; mask out the 2 bits we want to change
+
+	; check if slot is empty
+	bnz 	game.loop.placePiece.slotNotEmpty
+	jmp game.loop.placePiece.checkValidMove
+
+game.loop.placePiece.slotNotEmpty:
+	; slot is not empty, do nothing
+	; TODO play bad sound?
+	jmp 	game.loop.placePiece.end
+
+game.loop.placePiece.checkValidMove:
+	; TODO check valid moves
+
+game.loop.placePiece.actual:
+	; slot is empty, and move is valid, place piece
+	SETISAR PLAYER_STATE
+	lr 		A, S
+	ni 		%00000001
+	bnz 	game.loop.placePiece.actual.player2
+	li 		%00000010	; set bit to 1 for player 1
+	br 	game.loop.placePiece.actual.end
+game.loop.placePiece.actual.player2:
+	li 		%00000011	; set bit to 1 for player 2
+game.loop.placePiece.actual.end:
+	lr 		3, A		; store bit in r3
+	lr 		A, 2		; load bit position
+	ni 		%11111111	; mask out the bit we want to change
+	lr 		A, 3		; load bit
+	bz	 	game.loop.placePiece.shiftBitBack.end
+game.loop.placePiece.shiftBitBack:	
+	sl		1			; shift to get the bit in the right position
+	ds		2			; count number of bits to offset
+	bnz		game.loop.placePiece.shiftBitBack
+game.loop.placePiece.shiftBitBack.end:
+	lr 		3, A		; store new byte in r3
+
+	lr 		A, 4	; load register number from r4
+	lr 		IS, A	; set ISAR to the register number
+	lr 		A, 3	; load new byte
+	xs		S		; xor with the mask to set the bit
+	lr 		S, A	; store xored new byte in register
+
+	; and now draw the piece
+	jmp 	game.loop.placePiece.draw
+
+game.loop.placePiece.draw:
+	li 		$ff
+	lr 		0, A
+	; set color based on current player
+	SETISAR PLAYER_STATE
+	lr 		A, S
+	ni 		%00000001
+	bnz 	game.loop.placePiece.draw.setColor.player2
+	li 		PLAYER1_COLOR
+	jmp 	game.loop.placePiece.draw.setColor.end
+game.loop.placePiece.draw.setColor.player2:
+	li 		PLAYER2_COLOR
+game.loop.placePiece.draw.setColor.end:
+	lr 		1, A
+	; calculate X position
+	SETISAR PLAYER_STATE
+	lr 		A, S
+	ni 		%11100000
+	sr		4
+	sr	    1
+	com
+	ai 		1
+	lr		2, A
+	lr 		A, S
+	ni 		%11100000
+	sr 		1
+	sr 		1
+	as 		2
+	ai 		4
+	lr 		2, A		; store X in r2
+
+	; calculate Y position
+	lr 		A, S
+	ni 		%00011100
+	sr		1
+	com
+	ai 		1
+	lr		3, A
+	lr 		A, S
+	ni 		%00011100
+	sl 		1
+	as 		3
+	ai 		4
+	lr 		3, A		; store Y in r3
+	dci 	gfx.piece2.data
+	pi 		slot.draw
 
 game.loop.changePlayer:
 	; change player turn
@@ -361,14 +496,14 @@ game.loop.placePiece.end:
 	jmp game.loop.handleInput.end
 
 ;******************************************************************************
-;* SPRITE SLOT SELECTION DRAWING
+;* SPRITE SLOT DRAWING
 ;******************************************************************************
 ; r0 = color 1
 ; r1 = color 2
 ; r2 = x position
 ; r3 = y position
 
-slotSelection.draw:
+slot.draw:
 	; blit reference:
 	; r1 = color 1 (off)
 	; r2 = color 2 (on)
@@ -392,8 +527,7 @@ slotSelection.draw:
 	lr		A, 0
 	lr		1, A
 	
-	; draw slot selection
-	dci		gfx.slotSelection.data
+	; draw slot
 	jmp 	blit
 
 
@@ -666,4 +800,4 @@ board.drawEnd:
 
 ; Padding
 	org $fff
-	.byte $ff
+	.byte "yorah 2024"
