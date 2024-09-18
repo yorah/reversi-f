@@ -122,10 +122,10 @@ newgame.drawScreen.initSidebar.player2:
 	pi 		blitGraphic
 newgame.drawScreen.initSidebar.end:
 
-	pi	game.loop
+	jmp	game.loop
 
 newgame.loop.end:
-	jmp 	game.loop
+	jmp newgame.init
 
 
 ;******************************************************************************
@@ -221,7 +221,6 @@ newgame.loop.end:
 	ENDM
 
 game.loop:
-	lr 		K, P
 
 game.loop.slotSelection:
 	DRAW_SELECTION
@@ -337,7 +336,7 @@ game.loop.blink.switchToPlayerColor.end:
 	jmp 	game.loop.slotSelection
 
 game.loop.end:
-	pk
+	jmp newgame.loop.end
 
 ;******************************************************************************
 ;* PLACE PIECE
