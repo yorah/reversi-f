@@ -54,3 +54,23 @@ A way to emulate an OR could be an XOR-AND-XOR sequence (not sure, but
 looks like the way to go): (A XOR Sreg) XOR (A AND Sreg).
 
 ---
+
+## Status register and zero
+- *Date:* 2024-09-20
+- *Thought:* 
+
+The sequence:
+li 0
+ci 0
+
+Sets the status register to H'07', meaning the zero, carry and sign bits are set.
+This also means I can't use a BP branch instruction after that. Seems like 0 is not
+really positive I guess.
+
+li 1
+ci 0
+has the status register set to H'00', as expected.
+
+That's annoying.
+
+--

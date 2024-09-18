@@ -42,6 +42,7 @@ INCLUDE_DEPRECATED                 ; remove to DISABLE deprecated equates
 
 BIOS_CLEAR_SCREEN   = $00d0        ; uses r31
 BIOS_DELAY          = $008f
+BIOS_PROMPT         = $0099
 BIOS_PUSH_K         = $0107        ; used to allow more subroutine stack space
 BIOS_POP_K          = $011e
 BIOS_DRAW_CHARACTER = $0679
@@ -129,23 +130,23 @@ ram		=	$2800					;location of RAM available in Schach cartridge
                 MAC PROMPTS_NOT
 prompts         SUBROUTINE
                 LR   K,P                 ; 
-                PI   pushk               ; 
+                PI   kstack.push 
 .prompts2:      LI   $85                 ; red 5 (S)
                 LR   $0,A                ; 
-                PI   prompt              ; 
+                PI   BIOS_PROMPT         ; 
                 LR   A,$4                ; 
                 CI   $08                 ; is it button 4, Start?
                 BF   $4,.notbut4         ; no, check others
 .notbut2:
-                PI   popk                ; yes, return
+                PI   kstack.pop                ; yes, return
                 PK                       ; 
                 
 .notbut4:       CI   $02                 ; is it button 2, Mode?
                 BF   $4,.notbut2         ; 
                 LI   $8e                 ; red M
                 LR   $0,A                ; 
-                PI   prompt              ; 
-                ISU 3                   ; 
+                PI   BIOS_PROMPT         ; 
+                LISU 3                   ; 
                 LISL 6                   ; 
                 LR   A,(IS)              ; 
                 as      4                                       ;add the mode to the game #
