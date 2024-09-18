@@ -25,9 +25,6 @@
 ; in draw board, use a subroutine to draw horizontal lines (need kstack)
 ; in draw selection, use subroutine to draw selection instead of macro (need kstack)
 ; animate pieces flipping
-;
-; WTF moments
-; JMP does modify the accumulator (as stated by the doc, should have read it more carefully)
  
     processor f8
 
