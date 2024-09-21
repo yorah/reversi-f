@@ -33,6 +33,7 @@
 	include "ves.h"
 
 ; Constants
+GAME_SIZE 			= 4		; size in KB
 BLINK_LOOPS			= 12	; time to loop before changing color for blinking effect
 BOARD_COLOR			= COLOR_BLUE		; board color
 PLAYER1_COLOR		= COLOR_GREEN		; player 1 color
@@ -74,6 +75,30 @@ main:
 	lisl	7
 	lr		S, A
 
+	; clear screen, colored background
+	li		$d6		; $d6 gray - $c0 green - $21 b/w - $93 blue
+	lr		3, A
+	pi		BIOS_CLEAR_SCREEN
+
+	; draw Title Screen
+	dci 	gfx.titlescreen.parameters
+	pi 		blitGraphic
+
+	; wait for button press
+.waitButtonPress:
+	clr
+	outs 	0		; enable input from controllers (related to bit6 of port0?)
+	outs	1		; clear port1 (right controller	)
+	ins   	1		; read right controller first (requires half the CPU cycles than reading left controller on port 4 
+	com				; invert bits, so that 1 means button pressed
+	bnz 	.buttonPressed	; if button pressed, no need to read other controller	
+	outs 	4		; clear port4 (left controller)
+	ins  	4		; read left controller
+	com				; invert bits, so that 1 means button pressed
+	bnz 	.buttonPressed	; if button pressed, no need to read other controller
+	br		.waitButtonPress
+
+.buttonPressed:
 	; clear screen, colored background
 	li		$d6		; $d6 gray - $c0 green - $21 b/w - $93 blue
 	lr		3, A
@@ -323,6 +348,11 @@ game.loop:
 gameloop	SUBROUTINE
 
 .nextPlayerTurn:
+	; store player turn in r7 for canPlayerMove/flipChipsInDirection
+	SETISAR PLAYER_STATE
+	GET_PLAYER_TURN
+	lr 		7, A	; store player turn in r7	
+
 	; check if player can move
 	pi 		game.loop.canPlayerMove
 	ci 		0
@@ -335,6 +365,18 @@ gameloop	SUBROUTINE
 	jmp 	.slotSelection.draw
 
 .playerHasToSkip:
+	; if current player has to skip, check if next player has a valid move
+	; if not, that means end of game
+	SETISAR PLAYER_STATE
+	GET_PLAYER_TURN
+	xi 		%00000001	; switch player turn
+	lr 		7, A	; store player turn in r7	
+
+	; check if next player can move
+	pi 		game.loop.canPlayerMove
+	ci 		0
+	bz 		.gameOver
+
 	li 		SKIP_COLOR
 	SETISAR SKIP_BLINK_COLOR
 	lr 		S, A
@@ -342,6 +384,11 @@ gameloop	SUBROUTINE
 	lis 	1
 	SETISAR 12
 	lr 		12, A	; r12 used to flag if player has to skip turn, 1 = yes
+
+.gameOver:
+	; game over, show final score
+	; TODO
+	jmp 	newgame.loop.end
 
 .draw.loop:
 	SETISAR 12
@@ -543,20 +590,12 @@ canPlayerMove 	SUBROUTINE
 	lr    	0, A	; store 7 in r0, initial X=7
 	lr 		1, A	; store 7 in r1, initial Y=7
 
-	; store player turn in r7 for flipChipsInDirection
-	SETISAR PLAYER_STATE
-	GET_PLAYER_TURN
-	lr 		7, A	; store player turn in r7	
-
 .loopX:
 	pi 		getSlotContent
 
 	; check if slot is empty
 	ni 		%00000011
 	bnz 	.noValidMove
-
-	; DEBUG Uncomment line below to test no valid moves behavior
-	jmp .noValidMove
 
 	; check if current slot would be a valid move
 	lis 	2		; r6 set to 2, will be set to 1 if chip placed; only set on first direction checked
@@ -1439,5 +1478,5 @@ board.drawEnd:
 	include "graphics.inc"
 
 ; Padding
-	org $fff
+	org $800 + (GAME_SIZE * $400) - $16
 	.byte "yorah 2024"
