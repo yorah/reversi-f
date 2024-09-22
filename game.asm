@@ -50,6 +50,8 @@ PLAYER_STATE 		= 31	; first (higher) 3 bits are the X selection position
 							; last bit is the player turn (0 = player 1, 1 = player 2)
 BOARD_STATE 		= 32	; 16 bytes for the board state, ranging from r32 to r47
 							; corresponding to ISAR 40-47 and 50-57
+PLAYER1_SCORE		= 48	; player 1 score
+PLAYER2_SCORE		= 49	; player 2 score
 
 
 ;******************************************************************************
@@ -69,6 +71,39 @@ cartridge.init:
 ;******************************************************************************
 
 main:
+main 	SUBROUTINE
+	; clear all
+	clr
+	lisu 	6
+	lisl 	7
+.clearBoardBuffer6067:
+	lr 		D, A
+	br7 	.clearBoardBuffer6067
+	lisu 	5
+.clearBoardBuffer5057:
+	lr 		D, A
+	br7 	.clearBoardBuffer5057
+	lisu 	4
+.clearBoardBuffer4047:
+	lr 		D, A
+	br7 	.clearBoardBuffer4047
+	lisu 	3
+.clearBoardBuffer3037:
+	lr 		D, A
+	br7 	.clearBoardBuffer3037
+	lisu 	2
+.clearBoardBuffer2027:
+	lr 		D, A
+	br7 	.clearBoardBuffer2027
+	lisu 	1
+.clearBoardBuffer1017:
+	lr 		D, A
+	br7 	.clearBoardBuffer1017
+	lisu 	0
+.clearBoardBuffer0007:
+	lr 		D, A
+	br7 	.clearBoardBuffer0007
+
 	; initialize the kstack pointer
 	li		62		; stack starts at r62
 	lisu	7		; stack pointer is r63
@@ -80,6 +115,7 @@ main:
 	lr		3, A
 	pi		BIOS_CLEAR_SCREEN
 
+main.titleScreen:
 	; draw Title Screen
 	dci 	gfx.titlescreen.parameters
 	pi 		blitGraphic
@@ -123,6 +159,15 @@ main:
 	ENDM
 
 newgame.init:
+	SETISAR 31
+	lis 	0
+	lr 		S, A
+
+	; clear screen, colored background
+	li		$d6		; $d6 gray - $c0 green - $21 b/w - $93 blue
+	lr		3, A
+	pi		BIOS_CLEAR_SCREEN
+
 	li 		BLINK_LOOPS
 	SETISAR BLINK_COUNTER
 	lr 		S, A
@@ -131,9 +176,16 @@ newgame.init:
 	SETISAR PLAYER_STATE
 	lr		S, A
 
-	clr
+	; reset scores
+	lis 	2
+	SETISAR PLAYER1_SCORE
+	lr		S, A
+	SETISAR PLAYER2_SCORE
+	lr 		S, A
+
 	; init starting board state, clear r40-45 first (46-47 will be updated
 	; to place center pieces)
+	clr
 	lisu 	4
 	lisl 	5
 newgame.clearBoardBuffer4047:
@@ -385,9 +437,46 @@ gameloop	SUBROUTINE
 	SETISAR 12
 	lr 		12, A	; r12 used to flag if player has to skip turn, 1 = yes
 
+	jmp .draw.loop
+
 .gameOver:
-	; game over, show final score
-	; TODO
+	; game over, show winner
+	SETISAR PLAYER2_SCORE
+	lr 		A, S
+	com
+	ai 		1
+	SETISAR PLAYER1_SCORE
+	as	    S
+
+	bz .gameOver.draw
+
+	bp 		.gameOver.player1Wins
+	dci 	gfx.p2wins.parameters
+	pi 		blitGraphic
+	jmp 	.gameOver.waitButtonPress
+.gameOver.draw:
+	dci 	gfx.draw.parameters
+	pi 		blitGraphic
+	jmp 	.gameOver.waitButtonPress
+.gameOver.player1Wins:
+	dci 	gfx.p1wins.parameters
+	pi 		blitGraphic
+
+.gameOver.waitButtonPress:
+	; wait for button press
+.waitButtonPress:
+	clr
+	outs 	0		; enable input from controllers (related to bit6 of port0?)
+	outs	1		; clear port1 (right controller	)
+	ins   	1		; read right controller first (requires half the CPU cycles than reading left controller on port 4 
+	com				; invert bits, so that 1 means button pressed
+	bnz 	.buttonPressed	; if button pressed, no need to read other controller	
+	outs 	4		; clear port4 (left controller)
+	ins  	4		; read left controller
+	com				; invert bits, so that 1 means button pressed
+	bnz 	.buttonPressed	; if button pressed, no need to read other controller
+	br		.waitButtonPress
+.buttonPressed
 	jmp 	newgame.loop.end
 
 .draw.loop:
@@ -934,6 +1023,22 @@ flipChipsInDirection.loop:
 	RESTORE_PARAM 5, 21
 	RESTORE_PARAM 7, 23
 	RESTORE_PARAM 9, 24	; restore r9
+
+	lr 		A, 7	; load player playing
+	ni 		%00000001
+	bz 		.addScorePlayer1
+	SETISAR PLAYER2_SCORE
+	lr 		A, S
+	ai 		1
+	lr 		S, A
+	br 		.addScoreEnd
+.addScorePlayer1
+	SETISAR PLAYER1_SCORE
+	lr 		A, S
+	ai 		1
+	lr 		S, A
+.addScoreEnd
+
 	lis 	1
 	lr 		6, A	; store 1 in r6 to avoid calling placeChip multiple times
 	PRESERVE_PARAM 6, 22	; preserve r6
@@ -963,6 +1068,29 @@ flipChipsInDirection.loop:
 	RESTORE_PARAM  7, 23
 	RESTORE_PARAM  9, 24	; restore r9
 
+	lr 		A, 7	; load player playing
+	ni 		%00000001
+	bz 		.updateScorePlayer1
+	SETISAR PLAYER2_SCORE
+	lr 		A, S
+	ai 		1
+	lr 		S, A
+	SETISAR PLAYER1_SCORE
+	lr 		A, S
+	ai 		$ff
+	lr 		S, A
+	br 		.updateScoreEnd
+.updateScorePlayer1
+	SETISAR PLAYER1_SCORE
+	lr 		A, S
+	ai 		1
+	lr 		S, A
+	SETISAR PLAYER2_SCORE
+	lr 		A, S
+	ai 		$ff
+	lr 		S, A
+.updateScoreEnd
+
 	ds 		9		; decrement number of chips to flip
 	bnz 	.flipChipsInDirection.flipChips.loop	; loop until all chips are flipped
 
@@ -990,7 +1118,7 @@ placeChip	SUBROUTINE
 	lr 		K, P
 	pi      kstack.push
 
-	; place chip on empty slot
+	; place chip
 	SETISAR PLAYER_STATE
 	lr 		A, S
 	ni 		%00000001
@@ -1211,7 +1339,8 @@ slot.draw:
 ;* DRAW SIDEBAR
 ;******************************************************************************
 
-sidebar.draw:
+sidebar.draw
+sidebar 	SUBROUTINE
 	lr 		K, P
 
 	; blue color
@@ -1221,22 +1350,36 @@ sidebar.draw:
 	; start from row 57 (bottom)
 	li 		57
 	lr 		3, A
-sidebar.draw.row.loop:
+.draw.row.loop:
 	; draw from column 101
 	li		101
 	lr		2, A
-sidebar.draw.column.loop:
+.draw.column.loop:
 	pi 		plot
 	ds 		2		; move left
 	lr		A, 2
 	ci		64		; check if we reached column 64
-	bnz 	sidebar.draw.column.loop
+	bnz 	.draw.column.loop
 	ds 		3		; move up
-	bc 		sidebar.draw.row.loop
+	bc 		.draw.row.loop
 
 	; draw "Turn"
 	dci 	gfx.turn.parameters
 	pi 		blitGraphic
+
+	; draw first horizontal line
+	li 		COLOR_BACKGROUND
+	lr 		1, A
+	li 		99
+	lr 		2, A
+	li 		21
+	lr 		3, A
+.draw.first.horizontalLine:
+	pi 		plot
+	ds 		2
+	lr 		A, 2
+	ci 		66
+	bnz 	.draw.first.horizontalLine
 
 sidebar.drawEnd:
 	pk

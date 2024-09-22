@@ -169,3 +169,60 @@ gfx.p2.data:
 	.byte	%10100010
 	.byte	%11000100
 	.byte	%10001110
+
+;---------------------------------------------------------------------------
+; "P1 WINS!" Lettering
+;---------------------------------------------------------------------------
+
+gfx.p1wins.parameters:
+	.byte	BOARD_COLOR		; color 1 (clear color)
+	.byte	COLOR_BACKGROUND	; color 2
+	.byte	71			; x position
+	.byte	25			; y position
+	.byte	32			; width
+	.byte	4			; height
+	.word	gfx.p1wins.data		; address for the graphics
+
+gfx.p1wins.data:
+	.byte	%11000100, %01010111, %01100111, %01000000
+	.byte	%10101100, %01010010, %01010110, %01000000
+	.byte	%11000100, %01110010, %01010001, %00000000
+	.byte	%10001110, %01110111, %01010111, %01000000
+
+;---------------------------------------------------------------------------
+; "P2 WINS!" Lettering
+;---------------------------------------------------------------------------
+
+gfx.p2wins.parameters:
+	.byte	BOARD_COLOR		; color 1 (clear color)
+	.byte	COLOR_BACKGROUND	; color 2
+	.byte	71			; x position
+	.byte	25			; y position
+	.byte	32			; width
+	.byte	4			; height
+	.word	gfx.p2wins.data		; address for the graphics
+
+gfx.p2wins.data:
+	.byte	%11001100, %01010111, %01100111, %01000000
+	.byte	%10100010, %01010010, %01010110, %01000000
+	.byte	%11000100, %01110010, %01010001, %00000000
+	.byte	%10001110, %01110111, %01010111, %01000000
+
+;---------------------------------------------------------------------------
+; "DRAW" Lettering
+;---------------------------------------------------------------------------
+
+gfx.draw.parameters:
+	.byte	BOARD_COLOR		; color 1 (clear color)
+	.byte	COLOR_BACKGROUND	; color 2
+	.byte	76			; x position
+	.byte	25			; y position
+	.byte	16			; width
+	.byte	4			; height
+	.word	gfx.draw.data		; address for the graphics
+
+gfx.draw.data:
+	.byte	%11001100, %01001010
+	.byte	%10101010, %10101010
+	.byte	%10101100, %11101110
+	.byte	%11001010, %10101110
