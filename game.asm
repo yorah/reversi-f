@@ -72,38 +72,6 @@ cartridge.init:
 
 main:
 main 	SUBROUTINE
-	; clear all
-	clr
-	lisu 	6
-	lisl 	7
-.clearBoardBuffer6067:
-	lr 		D, A
-	br7 	.clearBoardBuffer6067
-	lisu 	5
-.clearBoardBuffer5057:
-	lr 		D, A
-	br7 	.clearBoardBuffer5057
-	lisu 	4
-.clearBoardBuffer4047:
-	lr 		D, A
-	br7 	.clearBoardBuffer4047
-	lisu 	3
-.clearBoardBuffer3037:
-	lr 		D, A
-	br7 	.clearBoardBuffer3037
-	lisu 	2
-.clearBoardBuffer2027:
-	lr 		D, A
-	br7 	.clearBoardBuffer2027
-	lisu 	1
-.clearBoardBuffer1017:
-	lr 		D, A
-	br7 	.clearBoardBuffer1017
-	lisu 	0
-.clearBoardBuffer0007:
-	lr 		D, A
-	br7 	.clearBoardBuffer0007
-
 	; initialize the kstack pointer
 	li		62		; stack starts at r62
 	lisu	7		; stack pointer is r63
@@ -161,7 +129,18 @@ main.titleScreen:
 newgame.init:
 	SETISAR 31
 	lis 	0
-	lr 		S, A
+	lr 		S, A	; clear r31 for bios clearscreen
+
+	; set K stack pointer (see pushk/popk)
+	lisu	7			; K stack pointer (r59)
+	lisl	3
+	li	$28
+	lr	S, A			; pointer is set to r40
+
+	lisu 5
+	lisl 0
+	li 	 0
+	lr 	 S, A
 
 	; clear screen, colored background
 	li		$d6		; $d6 gray - $c0 green - $21 b/w - $93 blue
@@ -696,6 +675,7 @@ canPlayerMove 	SUBROUTINE
 	lr 		5, A
 	pi 		flipChipsInDirection
 	IS_VALID_MOVE_FOUND
+	jmp 	.noValidMove
 	; test right-up diagonal
 	lis 	1
 	lr 		4, A
