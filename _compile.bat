@@ -1,1 +1,1 @@
-dasm game.asm -f3 -ogame.bin -lgame.lst
+dasm src/game.asm -f3 -obin/game.bin -lbin/game.lst

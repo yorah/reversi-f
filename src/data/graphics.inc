@@ -10,7 +10,7 @@
 ;---------------------------------------------------------------------------
 
 gfx.titlescreen.parameters:
-	.byte	COLOR_RED			; color 1 (clear color)
+	.byte	COLOR_GREEN			; color 1 (clear color)
 	.byte	COLOR_BLUE	; color 1
 	.byte	0			; x position
 	.byte	0			; y position
@@ -226,3 +226,4 @@ gfx.draw.data:
 	.byte	%10101010, %10101010
 	.byte	%10101100, %11101110
 	.byte	%11001010, %10101110
+
