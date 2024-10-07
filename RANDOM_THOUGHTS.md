@@ -55,22 +55,17 @@ looks like the way to go): (A XOR Sreg) XOR (A AND Sreg).
 
 ---
 
-## Status register and zero
-- *Date:* 2024-09-20
+## BIOS_CLEAR_SCREEN and kstack
+- *Date:* 2024-09-24
 - *Thought:* 
 
-The sequence:
-li 0
-ci 0
+The builtin clrscrn (see bios disassembly on VES Wiki) makes use of two things:
+- the r31 register, which must be set to 0 in order for clrscrn to work correctly
+- the builtin pushk/popk routines, which use a different structure than the one
+used by kstack (from VES Wiki again), and doesn't start from the same register
 
-Sets the status register to H'07', meaning the zero, carry and sign bits are set.
-This also means I can't use a BP branch instruction after that. Seems like 0 is not
-really positive I guess.
-
-li 1
-ci 0
-has the status register set to H'00', as expected.
-
-That's annoying.
+This effectively means that calling BIOS_CLEAR_SCREEN after the kstack
+has been used should be done very carefully, or avoiding using it
+alltogether.
 
 --

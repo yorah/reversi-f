@@ -54,6 +54,7 @@ COLOR_RED           = $40
 COLOR_BLUE          = $80
 COLOR_GREEN         = $00
 COLOR_BACKGROUND    = $C0
+COLOR_TRANSPARENT   = $FF
 
 ; Alternate (European) spellings...
 
