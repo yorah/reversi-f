@@ -11,7 +11,18 @@ titlescreenDraw 	SUBROUTINE
 	dci 	gfx.titlescreen.parameters
 	pi 		blitGraphic
 
-	WAIT_ANY_BUTTON_PRESS
+	WAIT_BUTTON_PRESS	%11001111, 1
+
+	dci		gfx.quickgame.parameters
+	pi		blitGraphic
+
+	dci		gfx.Bo3.parameters
+	pi		blitGraphic
+
+	dci		gfx.Bo5.parameters
+	pi		blitGraphic
+
+	WAIT_BUTTON_PRESS	%11001111, 1
 
 .titlescreenEnd:
 	pi		kstack.pop

@@ -17,12 +17,6 @@ blinkUpdate     SUBROUTINE
 	; reset the blinking counter to blink_loops count
 	SET_BLINKING_COUNTER BLINK_LOOPS
 
-	; clear debounce flag (debounce delay is linked to blinking delay at the moment)
-	SETISAR PLAYER_STATE
-	lr 		A, S
-	ni 		%11111101
-	lr 		S, A
-
 	SETISAR BLINK_COLOR
 	lr 		A, S
 	ci 		BOARD_COLOR

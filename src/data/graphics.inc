@@ -227,3 +227,63 @@ gfx.draw.data:
 	.byte	%10101100, %11101110
 	.byte	%11001010, %10101110
 
+;---------------------------------------------------------------------------
+; Game mode selection - "Quick game !"
+;---------------------------------------------------------------------------
+
+gfx.quickgame.parameters:
+	.byte	COLOR_GREEN	; color 1
+	.byte	COLOR_BACKGROUND	; color 2
+	.byte	28			; x position
+	.byte	36			; y position
+	.byte	48			; width
+	.byte	6			; height
+	.word	gfx.quickgame.data		; address for the graphics
+
+gfx.quickgame.data:
+	.byte	%01100000, %00100000, %01000000, %00000000, %00000000, %00001000
+	.byte	%10010000, %00000000, %01000000, %00000000, %00000000, %00001000
+	.byte	%10010100, %10100111, %01011000, %01110011, %10111000, %11001000
+	.byte	%10100100, %10101000, %01100000, %10010100, %10111101, %11100000
+	.byte	%01010011, %10100111, %01011000, %01110011, %10100101, %11001000
+	.byte   %00000000, %00000000, %00000000, %11100000, %00000000, %00000000
+
+;---------------------------------------------------------------------------
+; Game mode selection - "Bo3"
+;---------------------------------------------------------------------------
+
+gfx.Bo3.parameters:
+	.byte	COLOR_GREEN	; color 1
+	.byte	COLOR_BACKGROUND	; color 2
+	.byte	40			; x position
+	.byte	44			; y position
+	.byte	16			; width
+	.byte	5			; height
+	.word	gfx.Bo3.data		; address for the graphics
+
+gfx.Bo3.data:
+	.byte	%11100000, %00111000
+	.byte	%10010000, %00000100
+	.byte	%11100011, %00011000
+	.byte	%10010100, %10000100
+	.byte	%11100011, %00111000
+
+;---------------------------------------------------------------------------
+; Game mode selection - Bo5"
+;---------------------------------------------------------------------------
+
+gfx.Bo5.parameters:
+	.byte	COLOR_GREEN	; color 1
+	.byte	COLOR_BACKGROUND	; color 2
+	.byte	40			; x position
+	.byte	51			; y position
+	.byte	16			; width
+	.byte	5			; height
+	.word	gfx.Bo5.data		; address for the graphics
+
+gfx.Bo5.data:
+	.byte	%11100000, %00111100
+	.byte	%10010000, %00100000
+	.byte	%11100011, %00111000
+	.byte	%10010100, %10000100
+	.byte	%11100011, %00111000
