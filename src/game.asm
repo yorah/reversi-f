@@ -34,6 +34,7 @@
 	include "src/macros/draw.h"
 	include "src/macros/playerstate.h"
 	include "src/macros/gamestate.h"
+	include "src/macros/gamemode.h"
 
 ; Configuration
 GAME_SIZE 			= 4		; size in KB
@@ -45,6 +46,10 @@ PLAYER2_COLOR		= COLOR_RED			; player 2 color
 SKIP_COLOR			= COLOR_BACKGROUND	; color for skip text
 
 ; Registers used
+GAME_MODE			= 27	; last (low) two bits are the game mode (00 = quickgame, 01 = Bo3, 10 = Bo5)
+							; 3rd bit is whether it is human vs human (0) or human vs computer (1)
+							; 4th bit is the control mode (mixed controllers, or one controller per player)
+							; 4 high bits are unused
 SKIP_BLINK_COLOR	= 28	; color in use for skip blinking effect
 BLINK_COLOR			= 29	; color in use for blinking effect
 GAME_STATE			= 30	; holds the counter for blinking effect (selection

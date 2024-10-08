@@ -302,21 +302,21 @@ flipChipsInDirection	SUBROUTINE
 	lr		A, 0	; load X position
 	as	  	4		; add X direction
 	lr 		0, A    ; store new X position in r0
-	PRESERVE_PARAM 0, 25	; preserve new X
+	PRESERVE_PARAM 0, 24	; preserve new X
 
 	; get new Y
 	lr		A, 1	; load Y position
 	as		5		; add Y direction
 	lr		1, A	; store new Y position in r1
-	PRESERVE_PARAM 1, 26	; preserve new Y
+	PRESERVE_PARAM 1, 25	; preserve new Y
 
 	; call getSlotContent to retrieve register number and bit position to update in r2 and r3
 	pi 		getSlotContent
 	RESTORE_PARAM  4, 20
 
 	pi 		updateBoardAndDrawChip
-	RESTORE_PARAM  0, 25
-	RESTORE_PARAM  1, 26
+	RESTORE_PARAM  0, 24
+	RESTORE_PARAM  1, 25
 	RESTORE_PARAM  4, 20
 	RESTORE_PARAM  5, 21
 	RESTORE_PARAM  6, 22

@@ -22,7 +22,72 @@ titlescreenDraw 	SUBROUTINE
 	dci		gfx.Bo5.parameters
 	pi		blitGraphic
 
-	WAIT_BUTTON_PRESS	%11001111, 1
+	lis 	0	; quick game mode is default selection
+	lr 		11, A
+
+.gamemode.loop:
+	; draw selection
+	lr 		A, 11
+	ci		0
+	bz		.drawQuickGameSelection
+	ci 		1
+	bz		.drawBo3Selection
+	br 		.drawBo5Selection
+
+.drawQuickGameSelection:
+	DRAW_CHIP 	COLOR_RED, 20, 35, COLOR_GREEN
+	DRAW_CHIP	COLOR_GREEN, 32, 43, COLOR_GREEN
+	DRAW_CHIP 	COLOR_GREEN, 32, 50, COLOR_GREEN
+	jmp 	.waitButtonPress
+
+.drawBo3Selection:
+	DRAW_CHIP 	COLOR_GREEN, 20, 35, COLOR_GREEN
+	DRAW_CHIP	COLOR_RED, 32, 43, COLOR_GREEN
+	DRAW_CHIP 	COLOR_GREEN, 32, 50, COLOR_GREEN
+	jmp 	.waitButtonPress
+
+.drawBo5Selection:
+	DRAW_CHIP 	COLOR_GREEN, 20, 35, COLOR_GREEN
+	DRAW_CHIP	COLOR_GREEN, 32, 43, COLOR_GREEN
+	DRAW_CHIP 	COLOR_RED, 32, 50, COLOR_GREEN
+
+.waitButtonPress:
+	WAIT_BUTTON_PRESS	%10001100, 0
+
+	ni 		%10001100
+	bnz 	.handleInput	
+
+    jmp 	.gamemode.loop
+
+.handleInput:
+	; button pressed
+	ni 		%00001100
+	bz 		.gamemodeSelect
+	; test up direction
+	ni 		%00000100
+	bz 		.up
+	; test down direction
+	jmp		.down
+
+.gamemodeSelect:
+	SET_GAMEMODE	11
+	jmp 	.titlescreenEnd
+.up:
+	lr 		A, 11
+	ci		0
+	bz		.nogamemodechange
+	ds 		11
+	jmp 	.gamemode.loop
+.down:
+	lr 		A, 11
+	ci		2
+	bz		.nogamemodechange
+	inc
+	lr 		11, A
+	jmp 	.gamemode.loop
+
+.nogamemodechange:
+	jmp		.gamemode.loop
 
 .titlescreenEnd:
 	pi		kstack.pop

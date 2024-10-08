@@ -1,4 +1,5 @@
 ; Wait for any button press on either controller
+; Arguments passed: pattern to match, 0/1 to indicate if waiting until a button is pressed or not
 
     MAC WAIT_BUTTON_PRESS
 .waitButtonPress:

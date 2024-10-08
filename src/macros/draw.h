@@ -54,7 +54,7 @@
 	ai 		4			; Add top offset
 	lr 		3, A		; store Y-screen in r3	
 	dci		gfx.slotSelection.data
-	pi slot.draw
+	pi 		slot.draw
 	ENDM
 
 ; Draw SKIP text on sidebar
@@ -92,7 +92,7 @@
 
 ; Draw a chip on a board slot
 	MAC DRAW_CHIP
-	li 		$ff
+	li 		{4}
 	lr 		0, A		; store color 1 in r0 (for blit)
 	li 		{1}
 	lr 		1, A		; store color 2 in r1 (for blit)
