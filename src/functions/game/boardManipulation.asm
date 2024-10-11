@@ -320,6 +320,11 @@ flipChipsInDirection	SUBROUTINE
 
 	pi 		updateBoardAndDrawChip
 
+	; animate chip flipping
+	li		64
+	lr 		5, A
+	pi 		BIOS_DELAY
+
 	RESTORE_PARAM  7, 23
 
 	lis	 	1

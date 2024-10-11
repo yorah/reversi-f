@@ -92,6 +92,9 @@ newgameInit 	SUBROUTINE
 	; init score in sidebar
 	pi 		updateScoreInSidebar
 
+	; init Bo3 / Bo5 score in sidebar
+	pi 		updateBoScoreInSidebar
+
 .newgameEnd:
     pi 		kstack.pop
     pk

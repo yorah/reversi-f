@@ -11,8 +11,6 @@ titlescreenDraw 	SUBROUTINE
 	dci 	gfx.titlescreen.parameters
 	pi 		blitGraphic
 
-	WAIT_BUTTON_PRESS	%11001111, 1
-
 	dci		gfx.quickgame.parameters
 	pi		blitGraphic
 

@@ -30,6 +30,24 @@ sidebar 	SUBROUTINE
 	ds 		3		; move up
 	bc 		.row.loop
 
+	li 		COLOR_BACKGROUND
+	lr 		1, A
+	li		83
+	lr 		2, A
+	li		32
+	lr 		3, A
+	pi 		plot
+
+	li		48
+	lr 		3, A
+	pi 		plot
+	li		82
+	lr 		2, A
+	pi 		plot
+	li		84
+	lr 		2, A
+	pi		plot
+
 	; draw "Turn"
 	dci 	gfx.turn.parameters
 	pi 		blitGraphic
@@ -40,6 +58,23 @@ sidebar 	SUBROUTINE
 
 	; draw "Score"
 	dci 	gfx.score.parameters
+	pi 		blitGraphic
+
+	; draw gamemode
+	GET_GAMEMODE
+	ci 		GAMEMODE_QUICKGAME
+	bz		.drawBo1
+	ci 		GAMEMODE_BO3
+	bz		.drawBo3
+	dci 	gfx.sidebarBo5.parameters
+	jmp 	.drawGamemodeEnd
+.drawBo3:
+	dci 	gfx.sidebarBo3.parameters
+	jmp 	.drawGamemodeEnd
+
+.drawBo1:
+	dci 	gfx.sidebarBo1.parameters
+.drawGamemodeEnd:
 	pi 		blitGraphic
 
 .drawEnd:
@@ -92,11 +127,25 @@ updateScoreInSidebar 	SUBROUTINE
 	lr 		K, P
 	pi      kstack.push
 
-	DRAW_DIGIT PLAYER1_COLOR, 74, 1, PLAYER1_SCORE
-	DRAW_DIGIT PLAYER1_COLOR, 78, 0, PLAYER1_SCORE
+	DRAW_DIGIT PLAYER1_COLOR, 74, 30, 1, PLAYER1_SCORE
+	DRAW_DIGIT PLAYER1_COLOR, 78, 30, 0, PLAYER1_SCORE
 
-	DRAW_DIGIT PLAYER2_COLOR, 86, 1, PLAYER2_SCORE
-	DRAW_DIGIT PLAYER2_COLOR, 90, 0, PLAYER2_SCORE
+	DRAW_DIGIT PLAYER2_COLOR, 86, 30, 1, PLAYER2_SCORE
+	DRAW_DIGIT PLAYER2_COLOR, 90, 30, 0, PLAYER2_SCORE
+
+	pi   	kstack.pop
+	pk
+
+;******************************************************************************
+;* UPDATE Bo3 / Bo5 SCORE IN SIDEBAR
+;******************************************************************************
+updateBoScoreInSidebar:
+updateBoScoreInSidebar 	SUBROUTINE
+	lr 		K, P
+	pi      kstack.push
+
+	DRAW_DIGIT PLAYER1_COLOR, 77, 46, 1, GAME_SCORE
+	DRAW_DIGIT PLAYER2_COLOR, 87, 46, 0, GAME_SCORE
 
 	pi   	kstack.pop
 	pk

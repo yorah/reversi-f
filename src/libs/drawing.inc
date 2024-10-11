@@ -1,7 +1,6 @@
 ;******************************************************************************
 ;* DRAWING SUBROUTINES
 ;* Slightly adapted from veswiki (plot & blit)
-;* clearscreen adapted from builtin bios version to use r0 and kstack
 ;******************************************************************************
 
 ;----------------------;

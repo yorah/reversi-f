@@ -147,7 +147,7 @@
 	lr 		2, A
 	li		{2}
 	lr		3, A
-	li 		30
+	li 		{3}
 	lr 		4, A
 	lis 	3
 	lr 		5, A
@@ -155,9 +155,9 @@
 	lr 		6, A
 
 	dci     gfx.numbers
-	SETISAR {4}
+	SETISAR {5}
 
-	IF {3} == 1
+	IF {4} == 1
 	lr 		A, S
 	sr 		4		; shift right to get tens
 	ELSE

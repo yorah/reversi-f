@@ -12,13 +12,10 @@
 ; on the VES Wiki, and inspiration from the examples there (especially the
 ; pacman port by Blackbird and e5frog).
 ;
-
-; TODO
-; draw current score
+; IDEAS FOR NEW FEATURES
+; a game mode vs a simple AI
 ;
 ; IDEAS FOR IMPROVEMENT
-; in draw selection, use subroutine to draw selection instead of macro (is it really necessary?)
-; animate pieces flipping
 ; use snail pattern to check if valid move exists (more efficient)
 ; play "bad" sound if invalid move
 ;
@@ -63,6 +60,7 @@ BOARD_STATE 		= 32	; 16 bytes for the board state, ranging from r32 to r47
 							; corresponding to ISAR 40-47 and 50-57
 PLAYER1_SCORE		= 48	; player 1 score
 PLAYER2_SCORE		= 49	; player 2 score
+GAME_SCORE			= 50	; game score (for best of 3 or best of 5)
 
 
 ;******************************************************************************
@@ -104,6 +102,11 @@ main:
 titlescreen:
 	pi		titlescreen.draw
 
+	; reset game score (for Bo3 and Bo5)
+	lis 	0
+	SETISAR GAME_SCORE
+	lr		S, A
+
 
 ;******************************************************************************
 ;* NEW GAME INITIALIZATION
@@ -115,7 +118,7 @@ newgame:
 	jmp		game.loop
 
 newgame.end:
-	jmp 	newgame
+	jmp 	titlescreen
 
 
 ;******************************************************************************
@@ -142,6 +145,8 @@ gameloop	SUBROUTINE
 	;--- Game over ---
 .gameOver:
 	pi    	gameover
+	ci		1
+	bz		newgame
 	jmp 	game.loop.end
 
 	;-----------------
