@@ -89,6 +89,9 @@ newgameInit 	SUBROUTINE
 .initSidebarEnd:
 	pi 		blitGraphic
 
+	; init score in sidebar
+	pi 		updateScoreInSidebar
+
 .newgameEnd:
     pi 		kstack.pop
     pk

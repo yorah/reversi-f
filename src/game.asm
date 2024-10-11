@@ -135,7 +135,7 @@ gameloop	SUBROUTINE
 
 	;--------------------------------------
 	;--- Update sidebar (between turns) ---
-	pi 		updateSidebar
+	pi 		updateTurnInSidebar
 	jmp 	.draw.loop	; jump to draw loop
 
 	;-----------------

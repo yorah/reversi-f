@@ -277,10 +277,6 @@ flipChipsInDirection	SUBROUTINE
 	jmp 	flipChipsInDirection.end
 .callPlaceChip:
 	pi      updateBoardAndDrawChip
-	RESTORE_PARAM 0, 16 ; restore initial X
-	RESTORE_PARAM 1, 17 ; restore initial Y
-	RESTORE_PARAM 4, 20 ; restore r4 and r5 lost when calling updateBoardAndDrawChip
-	RESTORE_PARAM 5, 21
 	RESTORE_PARAM 7, 23
 
 	lr 		A, 7	; load player playing
@@ -291,9 +287,17 @@ flipChipsInDirection	SUBROUTINE
 .addScorePlayer1
 	SETISAR PLAYER1_SCORE
 .addScoreEnd
-	lr 		A, S
-	ai 		1
+	lis 	1
+	ai 		$66
+	asd 	S
 	lr 		S, A
+
+	pi      updateScoreInSidebar
+	RESTORE_PARAM 0, 16 ; restore initial X
+	RESTORE_PARAM 1, 17 ; restore initial Y
+	RESTORE_PARAM 4, 20 ; restore r4 and r5 lost when calling updateBoardAndDrawChip
+	RESTORE_PARAM 5, 21
+	RESTORE_PARAM 7, 23
 
 	lis 	1
 	lr 		6, A	; store 1 in r6 to avoid calling updateBoardAndDrawChip multiple times (if several directions can be flipped)
@@ -315,35 +319,51 @@ flipChipsInDirection	SUBROUTINE
 	RESTORE_PARAM  4, 20
 
 	pi 		updateBoardAndDrawChip
+
+	RESTORE_PARAM  7, 23
+
+	lis	 	1
+	lr 		0, A	; for decimal substraction
+
+	lr 		A, 7	; load player playing
+	ni 		%00000001
+	bz 		.updateScorePlayer1
+	SETISAR PLAYER2_SCORE
+	lis	    1
+	ai 		$66
+	asd 	S
+	lr 		S, A
+	SETISAR PLAYER1_SCORE
+	lis	    1
+	com
+	asd 	S
+	ai 		$66
+	asd 	0
+	lr 		S, A
+	br 		.updateScoreEnd
+.updateScorePlayer1
+	SETISAR PLAYER1_SCORE
+	lis	    1
+	ai 		$66
+	asd 	S
+	lr 		S, A
+	SETISAR PLAYER2_SCORE
+	lis	    1
+	com
+	asd 	S
+	ai 		$66
+	asd 	0
+	lr 		S, A
+
+.updateScoreEnd
+	pi 		updateScoreInSidebar
+
 	RESTORE_PARAM  0, 24
 	RESTORE_PARAM  1, 25
 	RESTORE_PARAM  4, 20
 	RESTORE_PARAM  5, 21
 	RESTORE_PARAM  6, 22
 	RESTORE_PARAM  7, 23
-
-	lr 		A, 7	; load player playing
-	ni 		%00000001
-	bz 		.updateScorePlayer1
-	SETISAR PLAYER2_SCORE
-	lr 		A, S
-	ai 		1
-	lr 		S, A
-	SETISAR PLAYER1_SCORE
-	lr 		A, S
-	ai 		$ff
-	lr 		S, A
-	br 		.updateScoreEnd
-.updateScorePlayer1
-	SETISAR PLAYER1_SCORE
-	lr 		A, S
-	ai 		1
-	lr 		S, A
-	SETISAR PLAYER2_SCORE
-	lr 		A, S
-	ai 		$ff
-	lr 		S, A
-.updateScoreEnd
 
 	ds 		10		; decrement number of chips to flip
 	bnz 	.flipChips.loop	; loop until all chips are flipped

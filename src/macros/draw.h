@@ -80,7 +80,7 @@
 	lr 		1, A
 	li 		99
 	lr 		2, A
-	li 		FIRST_HORIZONTAL_LINE_Y
+	li 		{1}
 	lr 		3, A
 .drawLine:
 	pi 		plot
@@ -138,4 +138,34 @@
 	
 	; draw skip
 	jmp 	blit
+	ENDM
+
+	MAC DRAW_DIGIT
+	li 	 	BOARD_COLOR
+	lr 		1, A
+	li 		{1}
+	lr 		2, A
+	li		{2}
+	lr		3, A
+	li 		30
+	lr 		4, A
+	lis 	3
+	lr 		5, A
+	lis 	5
+	lr 		6, A
+
+	dci     gfx.numbers
+	SETISAR {4}
+
+	IF {3} == 1
+	lr 		A, S
+	sr 		4		; shift right to get tens
+	ELSE
+	lis 	%1111
+	ns 		S
+	ENDIF
+
+	sl 		1		; x2 to get tile offset (2 bytes digits representation)
+	adc
+	pi 		blit
 	ENDM

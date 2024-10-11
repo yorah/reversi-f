@@ -178,7 +178,7 @@ gfx.p1wins.parameters:
 	.byte	BOARD_COLOR		; color 1 (clear color)
 	.byte	COLOR_BACKGROUND	; color 2
 	.byte	71			; x position
-	.byte	25			; y position
+	.byte	15			; y position
 	.byte	32			; width
 	.byte	4			; height
 	.word	gfx.p1wins.data		; address for the graphics
@@ -197,7 +197,7 @@ gfx.p2wins.parameters:
 	.byte	BOARD_COLOR		; color 1 (clear color)
 	.byte	COLOR_BACKGROUND	; color 2
 	.byte	71			; x position
-	.byte	25			; y position
+	.byte	15			; y position
 	.byte	32			; width
 	.byte	4			; height
 	.word	gfx.p2wins.data		; address for the graphics
@@ -216,7 +216,7 @@ gfx.draw.parameters:
 	.byte	BOARD_COLOR		; color 1 (clear color)
 	.byte	COLOR_BACKGROUND	; color 2
 	.byte	76			; x position
-	.byte	25			; y position
+	.byte	50			; y position
 	.byte	16			; width
 	.byte	4			; height
 	.word	gfx.draw.data		; address for the graphics
@@ -287,3 +287,38 @@ gfx.Bo5.data:
 	.byte	%11100011, %00111000
 	.byte	%10010100, %10000100
 	.byte	%11100011, %00111000
+
+;---------------------------------------------------------------------------
+; Score text
+;---------------------------------------------------------------------------
+
+gfx.score.parameters:
+	.byte	$ff			; color 1 (clear color)
+	.byte	COLOR_BACKGROUND	; color 2
+	.byte	74			; x position
+	.byte	24			; y position
+	.byte	24			; width
+	.byte	4			; height
+	.word	gfx.score.data		; address for the graphics
+
+gfx.score.data:
+	.byte	%11100110, %01001100, %11100000
+	.byte	%11001000, %10101010, %11000000
+	.byte	%00101000, %10101100, %10000000
+	.byte	%11100110, %01001010, %11100000
+
+;---------------------------------------------------------------------------
+; Score numbers (taken from ves-pacman)
+;---------------------------------------------------------------------------
+
+gfx.numbers:
+	.byte	%11110110, %11011110				; 0
+	.byte	%01011001, %00101110				; 1
+	.byte	%11100111, %11001110				; 2
+	.byte	%11100111, %10011110				; 3
+	.byte	%10110111, %10010010				; 4
+	.byte	%11110011, %10011110				; 5
+	.byte	%11110011, %11011110				; 6
+	.byte	%11100100, %10010010				; 7
+	.byte	%11110111, %11011110				; 8
+	.byte	%11110111, %10011110				; 9

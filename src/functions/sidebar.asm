@@ -4,7 +4,7 @@
 
 SIDEBAR_LEFT_X    = 64
 FIRST_HORIZONTAL_LINE_Y = 21
-SECOND_HORIZONTAL_LINE_Y = 33
+SECOND_HORIZONTAL_LINE_Y = 37
 
 sidebar.draw
 sidebar 	SUBROUTINE
@@ -38,6 +38,10 @@ sidebar 	SUBROUTINE
     SIDEBAR_DRAW_HORIZONTAL_LINE FIRST_HORIZONTAL_LINE_Y
     SIDEBAR_DRAW_HORIZONTAL_LINE SECOND_HORIZONTAL_LINE_Y
 
+	; draw "Score"
+	dci 	gfx.score.parameters
+	pi 		blitGraphic
+
 .drawEnd:
 	pi   kstack.pop
 	pk
@@ -58,10 +62,10 @@ skip.draw:
 
 
 ;******************************************************************************
-;* SPRITE SKIP DRAWING
+;* UPDATE TURN IN SIDEBAR
 ;******************************************************************************
-updateSidebar:
-updateSidebar 	SUBROUTINE
+updateTurnInSidebar:
+updateTurnInSidebar 	SUBROUTINE
 	lr 		K, P
 	pi      kstack.push
 
@@ -77,5 +81,22 @@ updateSidebar 	SUBROUTINE
 	pi 		blitGraphic
 	pi 		setBlinkColorToPlayerColor
 
-	pi   kstack.pop
+	pi  	kstack.pop
+	pk
+
+;******************************************************************************
+;* UPDATE SCORE IN SIDEBAR
+;******************************************************************************
+updateScoreInSidebar:
+updateScoreInSidebar 	SUBROUTINE
+	lr 		K, P
+	pi      kstack.push
+
+	DRAW_DIGIT PLAYER1_COLOR, 74, 1, PLAYER1_SCORE
+	DRAW_DIGIT PLAYER1_COLOR, 78, 0, PLAYER1_SCORE
+
+	DRAW_DIGIT PLAYER2_COLOR, 86, 1, PLAYER2_SCORE
+	DRAW_DIGIT PLAYER2_COLOR, 90, 0, PLAYER2_SCORE
+
+	pi   	kstack.pop
 	pk

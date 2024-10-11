@@ -5,7 +5,7 @@
 ;
 ; In Bo3 gamemode, this routine will update match score and check if the match is over.
 ; It will also display the end of the match.
-; In Bo1 gamemode, this routine only displays the winner and wait for a console button
+; In QuickGame (Bo1) gamemode, this routine only displays the winner and wait for a console button
 ; to be pressed
 
 
@@ -14,13 +14,17 @@ gameover    SUBROUTINE
     lr     K, P
     pi     kstack.push
 
+	lis 	1
+	lr		0, A
+
 	; game over, show winner
 	SETISAR PLAYER2_SCORE
 	lr 		A, S
 	com
-	ai 		1
 	SETISAR PLAYER1_SCORE
-	as	    S
+	asd 	S
+	ai 		$66
+	asd 	0
 
     ; if 0, scores are equal, so it's a draw
 	bz .draw

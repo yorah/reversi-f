@@ -102,6 +102,7 @@ canPlayerMove 	SUBROUTINE
 	lr 		5, A
 	pi 		flipChipsInDirection
 	IS_VALID_MOVE_FOUND
+	jmp .noValidMove
 	; test right-up diagonal
 	lis 	1
 	lr 		4, A
