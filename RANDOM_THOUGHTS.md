@@ -68,4 +68,16 @@ This effectively means that calling BIOS_CLEAR_SCREEN after the kstack
 has been used should be done very carefully, or avoiding using it
 alltogether.
 
---
+---
+
+## BIOS_CLEAR_SCREEN and kstack
+- *Date:* 2024-10-11
+- *Thought:* 
+
+Turns out you can't rely on the sign status when doing BCD arithmetics
+on the F8 processor (like using ASD).
+
+I ended up comparing the scores in gameover.asm by first comparing high
+nibble and then low nibble.
+
+---

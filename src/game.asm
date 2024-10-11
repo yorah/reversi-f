@@ -34,7 +34,7 @@
 	include "src/macros/gamemode.h"
 
 ; Configuration
-GAME_SIZE 			= 4		; size in KB
+GAME_SIZE 			= 8		; size in KB
 BLINK_DELAY			= $08		; delay for blinking effect (delay is actually delay * loops)
 BLINK_LOOPS			= %00001100	; time to loop before changing color for blinking effect
 BOARD_COLOR			= COLOR_BLUE		; board color

@@ -16,22 +16,41 @@ gameover    SUBROUTINE
     lr     K, P
     pi     kstack.push
 
-	lis 	1
-	lr		0, A
-
-	; game over, show winner
+	; game over, find winner
 	SETISAR PLAYER2_SCORE
 	lr 		A, S
-	com
-	SETISAR PLAYER1_SCORE
-	asd 	S
-	ai 		$66
-	asd 	0
+	ni 		%11110000	; mask for high nibble
+	sr 		4
+	lr 		3, A
 
-    ; if 0, scores are equal, so it's a draw
-	bz .draw
-    ; if player 1 score > player 2 score, player 1 wins
-	bp 		.player1Wins
+	SETISAR PLAYER1_SCORE
+	lr 		A, S
+	ni      %11110000	; mask for high nibble
+	sr 		4
+	com
+	ai 		1
+	as 		3
+
+	bm 		.player1Wins
+	bz 		.compareLowNibble
+	jmp 	.player2Wins
+
+.compareLowNibble:
+	SETISAR PLAYER2_SCORE
+	lr 		A, S
+	ni 		%00001111	; mask for low nibble
+	lr 		3, A
+
+	SETISAR PLAYER1_SCORE
+	lr 		A, S
+	ni      %00001111	; mask for low nibble
+	com
+	ai 		1
+	as 		3
+
+	bm 		.player1Wins
+	bz 		.draw
+	jmp 	.player2Wins
 
 .player2Wins:    
 	SETISAR GAME_SCORE	; increase gamescore
