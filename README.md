@@ -1,4 +1,4 @@
- # Reversi-F
+# Reversi-F
 Port of the Reversi game to the Fairchild ChannelF / VES.
 
 ## Compiling & running
@@ -13,14 +13,14 @@ modify the .bat files referencing them.
 You also need to put the ChannelF bios in the /roms folder (or it should
 be available to MAME one way or another).
 
+To Build and Run the game in MAME, execute _make.bat
+
 ## Disclaimer
 
 This code certainly ain't pretty. It started as a small experiment, out
 of curiosity for the F8 processor and the Fairchild ChannelF, and I didn't
 really anticipate the time I would spend on it. I learned a few things
 along the way, some of whom I shared in the [Random thoughts] (RANDOM_THOUGHTS.md) file.
-
-If I were to do it again, I would organize the code differently.
 
 I also really wanted to have a working version which does not use the SCHACH
 RAM (additional RAM), so everything had to work with only the 64 8bits
