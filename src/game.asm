@@ -16,7 +16,7 @@
 ; a game mode vs a simple AI
 ;
 ; IDEAS FOR IMPROVEMENT
-; use snail pattern to check if valid move exists (more efficient)
+; use snail pattern to check if valid move exists (more efficient, although not necessary...)
 ; play "bad" sound if invalid move
 ;
  
@@ -80,14 +80,12 @@ cartridge.init:
 ;******************************************************************************
 
 main:
-	; clear screen, colored background
-	; call it before initializing kstack, as it makes use of the builtin stack
-	li		$d6		; $d6 gray - $c0 green - $21 b/w - $93 blue
-	lr		3, A
-	pi		BIOS_CLEAR_SCREEN
+	; set palette
+	dci 	gfx.palette.parameters
+	pi 		blitGraphic
 
 	; initialize the kstack pointer
-	li	62		; stack starts at r62
+	li		62		; stack starts at r62
 	lisu	7	; stack pointer is r63
 	lisl	7
 	lr		S, A

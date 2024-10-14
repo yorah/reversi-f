@@ -6,6 +6,25 @@
 ;******************************************************************************
 
 ;---------------------------------------------------------------------------
+; Set palette (instead of calling clearscreen)
+; https://channelf.se/veswiki/index.php?title=Palette
+;---------------------------------------------------------------------------
+
+gfx.palette.parameters:
+	.byte	COLOR_BACKGROUND	; color 1
+	.byte	COLOR_GREEN			; color 2
+	.byte	121			; x position if using 4 offset adjusted for MESS screen, it's really 125.
+	.byte	0			; y position
+	.byte	2			; width
+	.byte	58			; height
+	.word	gfx.palette.data	; address for the graphics
+
+gfx.palette.data:
+		.byte	%01010101, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101
+		.byte	%01010101, %01010101, %01010101, %01010101, %01010101, %01010101, %01010101
+		.byte	%01010101
+
+;---------------------------------------------------------------------------
 ; Title screen
 ;---------------------------------------------------------------------------
 
