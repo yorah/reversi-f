@@ -16,7 +16,7 @@ gfx.palette.parameters:
 	.byte	121			; x position if using 4 offset adjusted for MESS screen, it's really 125.
 	.byte	0			; y position
 	.byte	2			; width
-	.byte	58			; height
+	.byte	60			; height
 	.word	gfx.palette.data	; address for the graphics
 
 gfx.palette.data:
@@ -29,12 +29,12 @@ gfx.palette.data:
 ;---------------------------------------------------------------------------
 
 gfx.titlescreen.parameters:
-	.byte	COLOR_GREEN			; color 1 (clear color)
-	.byte	COLOR_BLUE	; color 1
+	.byte	COLOR_GREEN	; color 1 (clear color)
+	.byte	COLOR_BLUE	; color 2
 	.byte	0			; x position
 	.byte	0			; y position
 	.byte	104			; width
-	.byte	58			; height
+	.byte	60			; height
 	.word	gfx.titlescreen.data		; address for the graphics
 
 gfx.titlescreen.data:
@@ -69,7 +69,7 @@ gfx.titlescreen.data:
 		.byte %00000000, %00000000, %00000000, %00000000, %00000000, %00000000, %00000000, %00000000, %00000000, %00000000, %00000000, %00000000, %00000000
 	REPEND
 		.byte %00000000, %11111111, %11111111, %11111111, %11111111, %11111111, %11111111, %11111111, %11111111, %11111111, %11111111, %11111111, %00000000
-	REPEAT	29
+	REPEAT	31
 		.byte %00000000, %00000000, %00000000, %00000000, %00000000, %00000000, %00000000, %00000000, %00000000, %00000000, %00000000, %00000000, %00000000
 	REPEND
 

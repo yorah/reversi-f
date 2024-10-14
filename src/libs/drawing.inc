@@ -68,6 +68,7 @@ plot:
 	lis		4
 	as		3		; adjust the y coordinate
 	com
+	ni	%00111111
 	outs	5		; place inverted coordinate for y on port 5 (bit 6, 7 not used, those are for sound)
 
 	; transfer data to the screen memory by toggling ARM
@@ -77,7 +78,7 @@ plot:
 	outs	0		; %11000000, no controller inputs, b5 ARM = 0, b7 (N/C) is set to 1
 
 	; delay until it's fully updated
-	lis		4		; Value is 4 in Videocart 21 - Bowling
+	lis		6
 .plotDelay:	
 	ai		$ff
 	bnz		.plotDelay
@@ -157,6 +158,7 @@ blit:
 	lr	A, 4					; load the y offset
 	com							; invert it
 .blitRow:
+	ni	%00111111
 	outs	5					; load accumulator into port 5 (row)
 
 	; check vertical counter

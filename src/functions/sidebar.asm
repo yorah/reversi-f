@@ -14,8 +14,8 @@ sidebar 	SUBROUTINE
 	; blue color
 	li 		BOARD_COLOR
 	lr 		1, A
-	; start from row 57 (bottom)
-	li 		57
+	; start from row 60 (bottom)
+	li 		60
 	lr 		3, A
 .row.loop:
 	; draw from column 101
