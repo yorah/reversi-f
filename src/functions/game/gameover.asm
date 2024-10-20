@@ -136,6 +136,13 @@ gameover    SUBROUTINE
 	pi 		blitGraphic
 	jmp 	.waitButtonPress
 .p2WinsMatch:
+	; display AI or P2 wins
+	GET_AI
+	bz 		.p2WinsMatchDisplay
+	dci 	gfx.aiwinsmatch.parameters
+	pi 		blitGraphic
+	jmp 	.waitButtonPress
+.p2WinsMatchDisplay:
 	dci 	gfx.p2winsmatch.parameters
 	pi 		blitGraphic
 	jmp 	.waitButtonPress

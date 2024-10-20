@@ -18,9 +18,29 @@ handleInput     SUBROUTINE
     lr      K, P
     pi      kstack.push
 
-	WAIT_BUTTON_PRESS	%10001111, 0
+	; if handling input for a game against AI, we can only be here if waiting
+	; for button press when AI has to skip. Check if we are in that case
+	GET_TURN_STATE
+	ci 		CURRENT_PLAYER_HAS_TO_SKIP
+	bnz 	.waitForAllInput
+	SETISAR PLAYER_STATE
+	GET_PLAYER_TURN
+	ni 		%00000001
+	bz 		.waitForAllInput
+	GET_AI
+	bz 		.waitForAllInput
+	jmp 	.waitForPressButtonInputOnly
 
+.waitForAllInput:
+	WAIT_BUTTON_PRESS	%10001111, 0
 	ni 		%10001111
+	br 		.handleInputNext
+
+.waitForPressButtonInputOnly:
+	WAIT_BUTTON_PRESS	%10000000, 0
+	ni 		%10000000
+
+.handleInputNext:
 	bnz 	.handleInput	
 
 .skip
@@ -31,7 +51,17 @@ handleInput     SUBROUTINE
     ; his input was registered). We have to use r10 as r0-r9 are used in CLEAR_SELECTION
     ; by the blitGraphic routine
 	lr 		10, A   ; save A in r10 (contains the input value)
-	CLEAR_SELECTION
+	SETISAR PLAYER_STATE
+	GET_PLAYER_TURN
+	bnz 	.player2
+	li 		PLAYER1_COLOR
+	br 		.end
+.player2:
+	li 		PLAYER2_COLOR
+.end:
+	SETISAR BLINK_COLOR
+	lr 		S, A
+	DRAW_SELECTION
 
 	lr 		A, 10   ; restore A from r10 (to the input value)
 
