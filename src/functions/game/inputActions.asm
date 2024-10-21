@@ -6,17 +6,23 @@
 inputPlaceChip:
 	pi 		placeChipIfValid
 	ci 		0
-	bnz 	updatePlayerTurn
+	bnz 	.updatePlayerTurnJmp
     MAP_ACTION_RETURN 0, handleInput.continuations
+.updatePlayerTurnJmp:
+	jmp 	updatePlayerTurn
 
 moveUp:
-	UPDATE_Y_POSITION $ff
+	CLEAR_SELECTION
+	UPDATE_Y_POSITION $ff, 1
 moveDown:
-	UPDATE_Y_POSITION $01
+	CLEAR_SELECTION
+	UPDATE_Y_POSITION $01, 1
 moveLeft:
-	UPDATE_X_POSITION $ff
+	CLEAR_SELECTION
+	UPDATE_X_POSITION $ff, 1
 moveRight:
-	UPDATE_X_POSITION $01
+	CLEAR_SELECTION
+	UPDATE_X_POSITION $01, 1
 
 noInput:
     MAP_ACTION_RETURN 1, handleInput.continuations
@@ -137,7 +143,6 @@ placeChipIfValid.hasChipsToFlip:
 	lr 		10, A	; store 1 in r10 to indicate move was valid
 
 placeChipIfValid.end:
-
 	pi 		kstack.pop
 	lr 		A, 10 	; r10 will either be set to 1 if chip was placed, or 0 if not
 	pk

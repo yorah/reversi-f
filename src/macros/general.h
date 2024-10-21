@@ -1,6 +1,6 @@
 ; Simple delay loop
     MAC DELAY
-    li		$ff
+    li		{1}
 .delay
 	ai		$ff
 	bnz		.delay

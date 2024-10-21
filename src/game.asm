@@ -12,14 +12,11 @@
 ; on the VES Wiki, and inspiration from the examples there (especially the
 ; pacman port by Blackbird and e5frog).
 ;
-; IDEAS FOR NEW FEATURES
-; a game mode vs a simple AI
-;
 ; IDEAS FOR IMPROVEMENT
 ; use snail pattern to check if valid move exists (more efficient, although not necessary...)
 ; play "bad" sound if invalid move
 ;
- 
+
     processor f8
 
 ; Include VES Header
@@ -43,10 +40,10 @@ PLAYER2_COLOR		= COLOR_RED			; player 2 color
 SKIP_COLOR			= COLOR_BACKGROUND	; color for skip text
 
 ; Registers used
+AI_NEXT_MOVE_SCORE	= 26	; used to store the score of the next best move for the AI
 GAME_MODE			= 27	; last (low) two bits are the game mode (00 = quickgame, 01 = Bo3, 10 = Bo5)
 							; 3rd bit is whether it is human vs human (0) or human vs computer (1)
-							; 4th bit is the control mode (mixed controllers, or one controller per player)
-							; 4 high bits are unused
+							; 5 high bits are unused
 SKIP_BLINK_COLOR	= 28	; color in use for skip blinking effect
 BLINK_COLOR			= 29	; color in use for blinking effect
 GAME_STATE			= 30	; holds the counter for blinking effect (selection
@@ -61,6 +58,8 @@ BOARD_STATE 		= 32	; 16 bytes for the board state, ranging from r32 to r47
 PLAYER1_SCORE		= 48	; player 1 score
 PLAYER2_SCORE		= 49	; player 2 score
 GAME_SCORE			= 50	; game score (for best of 3 or best of 5)
+RANDOM_GENERATOR	= 51	; random generator register
+; 53-62 are used for the kstack, 63 is the stack pointer, that allows for 6 levels of subroutine calls
 
 
 ;******************************************************************************
@@ -163,8 +162,27 @@ gameloop	SUBROUTINE
 	lr 		5, A
 	pi 		BIOS_DELAY
 
+	;----------
+	;--- AI ---
+	GET_TURN_STATE
+	ci 		CURRENT_PLAYER_CAN_MOVE
+	bz     .ai.move
+	jmp 	.handleInput	; no move available, wait for human button press
+
+.ai.move
+	GET_AI
+	bz		.handleInput	; human player, skip AI phase
+	; AI is always P2
+	SETISAR PLAYER_STATE
+	GET_PLAYER_TURN
+	ni 		%00000001
+	bz      .handleInput
+	pi 		aiNextMove
+	jmp 	game.loop
+
 	;--------------------
 	;--- Handle input ---
+.handleInput:
 	pi 		handleInput
 	JMP_TABLE input.actions
 
@@ -178,13 +196,11 @@ resetBlinkColor.continue:
 
 blink.continue:
 	pi 		blinkUpdate
-	jmp 	.handleInputEnd
-	; TODO: call blinkdelay drectly if blink_counter is not yet to 0 (no need to redraw)
 
 .handleInputEnd:
 	GET_BLINKING_COUNTER
 	ci		BLINK_LOOPS		; check if we need to switch color
-	bz	 	.loop.draw
+	bz	 	.loop.draw		; need to use indirection, target address is too far due to MACROS used
 	jmp 	.blinkDelay.loop
 .loop.draw:
 	jmp 	.draw.loop
@@ -209,6 +225,7 @@ game.loop.end:
 	include "src/functions/game/inputActions.asm"
 	include "src/functions/game/blink.asm"
 	include "src/functions/game/boardManipulation.asm"
+	include "src/functions/game/ai.asm"
 
 
 ;******************************************************************************
@@ -225,6 +242,9 @@ game.loop.end:
 
 	; jump tables
 	include "src/data/jumptables.inc"
+
+	; ai data
+	include "src/data/ai.inc"
 
 ; Padding
 	org $800 + (GAME_SIZE * $400) - $16

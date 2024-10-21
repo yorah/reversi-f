@@ -51,9 +51,12 @@ titlescreenDraw 	SUBROUTINE
 
 .waitButtonPress:
 	WAIT_BUTTON_PRESS	%10001100, 0
-
 	ni 		%10001100
 	bnz 	.handleInput	
+
+	; randomize seed
+	SETISAR RANDOM_GENERATOR
+	ds 		S
 
     jmp 	.gamemode.loop
 
@@ -69,7 +72,7 @@ titlescreenDraw 	SUBROUTINE
 
 .gamemodeSelect:
 	SET_GAMEMODE	11
-	jmp 	.titlescreenEnd
+	jmp 	.opponentSelect
 .up:
 	lr 		A, 11
 	ci		0
@@ -86,6 +89,71 @@ titlescreenDraw 	SUBROUTINE
 
 .nogamemodechange:
 	jmp		.gamemode.loop
+
+.opponentSelect:
+	SET_AI_DISABLED ; default selection
+
+	dci 	gfx.titlescreen.parameters
+	pi 		blitGraphic
+
+	dci		gfx.p1vsp2.parameters
+	pi		blitGraphic
+
+	dci		gfx.p1vsAI.parameters
+	pi		blitGraphic
+
+	lis 	0	; quick game mode is default selection
+	lr 		11, A
+
+.opponentSelect.loop:
+	; draw selection
+	lr 		A, 11
+	ci		0
+	bz		.drawP1vsP2Selection
+	br 		.drawP1vsAISelection
+
+.drawP1vsP2Selection:
+	DRAW_CHIP 	COLOR_RED, 23, 33, COLOR_GREEN
+	DRAW_CHIP	COLOR_GREEN, 18, 42, COLOR_GREEN
+	jmp 	.waitButtonPressOpponent
+
+.drawP1vsAISelection:
+	DRAW_CHIP 	COLOR_GREEN, 23, 33, COLOR_GREEN
+	DRAW_CHIP	COLOR_RED, 18, 42, COLOR_GREEN
+
+.waitButtonPressOpponent:
+	WAIT_BUTTON_PRESS	%10001100, 0
+	ni 		%10001100
+	bnz 	.handleInputOpponent
+
+	; randomize seed
+	SETISAR RANDOM_GENERATOR
+	ds 		S
+
+    jmp 	.opponentSelect.loop
+
+.handleInputOpponent:
+	; button pressed
+	ni 		%00001100
+	bz 		.selectOpponent
+	; test up direction
+	ni 		%00000100
+	bz 		.upOpponent
+	; test down direction
+	jmp		.downOpponent
+
+.selectOpponent:
+	jmp 	.titlescreenEnd
+.upOpponent:
+	lis  	0
+	lr 		11, A
+	SET_AI_DISABLED
+	jmp 	.opponentSelect.loop
+.downOpponent:
+	lis  	1
+	lr 		11, A
+	SET_AI_ENABLED
+	jmp 	.opponentSelect.loop
 
 .titlescreenEnd:
 	pi		kstack.pop

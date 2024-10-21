@@ -42,7 +42,9 @@
     ni 		%11100011	; clear Y position
     xs		0
     lr		S, A
-    MAP_ACTION_RETURN 0, handleInput.continuations
+    IF {2} = 1
+        MAP_ACTION_RETURN 0, handleInput.continuations
+    ENDIF
     ENDM
 
 ; Updates the player state by adding {1} to the existing X position
@@ -56,10 +58,21 @@
     ni 		%00000111
     sl 		4
     sl 		1
-    lr 		0, A	; store new Y position
+    lr 		0, A	; store new X position
     lr		A, S
-    ni 		%00011111	; clear Y position
+    ni 		%00011111	; clear X position
     xs		0
     lr		S, A
-    MAP_ACTION_RETURN 0, handleInput.continuations
+    IF {2} = 1
+        MAP_ACTION_RETURN 0, handleInput.continuations
+    ENDIF
+    ENDM
+
+; Sets the player state X and Y position directly from passed register
+    MAC SET_XY_POSITION
+    SETISAR PLAYER_STATE
+    lr		A, S
+    ni 		%00000011	; clear XY position
+    xs		{1}
+    lr		S, A
     ENDM

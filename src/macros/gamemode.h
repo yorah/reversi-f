@@ -17,3 +17,26 @@ GAMEMODE_BO5 = %00000010
     xs      {1}
     lr      S, A
     ENDM
+
+; returns if AI is enabled
+    MAC GET_AI
+    SETISAR GAME_MODE
+    lr 		A, S
+    ni 		%00000100
+    ENDM
+
+; sets AI enabled
+    MAC SET_AI_ENABLED
+    SETISAR GAME_MODE   
+    lr 		A, S
+    oi      %00000100
+    lr      S, A
+    ENDM
+
+; sets AI disabled
+    MAC SET_AI_DISABLED
+    SETISAR GAME_MODE   
+    lr 		A, S
+    ni      %11111011
+    lr      S, A
+    ENDM

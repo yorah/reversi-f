@@ -174,12 +174,13 @@ getSlotContent	SUBROUTINE
 ; r6 = call updateBoardAndDrawChip if zero; only do checks if 2; if 1, avoid calling updateBoardAndDrawChip multiple times but flip chips
 ; r7 = player turn (used to check if slot is player 1 or player 2)
 ;
-; modifies: r4-r5, r7-r9 (through updateBoardAndDrawChip call; r7 not modified if only checking)
+; modifies: r4-r5, r7-r10 (through updateBoardAndDrawChip call; r7 not modified if only checking)
 ;			r0-r1 are preserved, r2-r3 too if needed (no chip flipped in this direction), r6 returned as 1 if updateBoardAndDrawChip was called
 ;			r16-r26 (used to preserve params)
 ; returns in r6: 1 if updateBoardAndDrawChip was called, or if r6 was 1 initially, to avoid calling it multiple times.
 ;	Also serves to know if move was deemed valid, as it will be 0 if no chips were flipped on this direction
 ;   or on previous directions checked
+; returns in r10: the number of chips that can be flipped in this direction (if only checking, with r6=2)
 
 flipChipsInDirection:
 flipChipsInDirection	SUBROUTINE
@@ -197,7 +198,7 @@ flipChipsInDirection	SUBROUTINE
 	PRESERVE_PARAM 7, 23
 	
 	lis 	0
-	lr 		10, a		; store 0 in r10 (used to track if opponents chips were found)
+	lr 		10, A		; store 0 in r10 (used to track if opponents chips were found)
 
 	; move to next slot to check
 .flipChipsInDirection.loop:
@@ -258,9 +259,8 @@ flipChipsInDirection	SUBROUTINE
 	lr 		A, 10	; load previous opponents chips found
 	ni 		%11111111
 	bz      .noChipsToFlip	; if no opponents chips were found, no chips to flip
-	; chips to flip... start flipping baby
-	jmp 	.flipChips
 
+	; chips to flip... start flipping baby
 .flipChips:
 	RESTORE_PARAM 0, 16	; restore initial X
 	RESTORE_PARAM 1, 17	; restore initial Y
@@ -277,6 +277,11 @@ flipChipsInDirection	SUBROUTINE
 	jmp 	flipChipsInDirection.end
 .callPlaceChip:
 	pi      updateBoardAndDrawChip
+	; animate chip flipping
+	li		128
+	lr 		5, A
+	pi 		BIOS_DELAY
+	RESTORE_PARAM 5, 21
 	RESTORE_PARAM 7, 23
 
 	lr 		A, 7	; load player playing
@@ -321,7 +326,7 @@ flipChipsInDirection	SUBROUTINE
 	pi 		updateBoardAndDrawChip
 
 	; animate chip flipping
-	li		64
+	li		128
 	lr 		5, A
 	pi 		BIOS_DELAY
 
