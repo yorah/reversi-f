@@ -50,10 +50,13 @@ titlescreenDraw 	SUBROUTINE
 	DRAW_CHIP 	COLOR_RED, 24, 47, COLOR_GREEN
 
 .waitButtonPress:
-	WAIT_BUTTON_PRESS	%10001100, 1
-
+	WAIT_BUTTON_PRESS	%10001100, 0
 	ni 		%10001100
 	bnz 	.handleInput	
+
+	; randomize seed
+	SETISAR RANDOM_GENERATOR
+	ds 		S
 
     jmp 	.gamemode.loop
 
@@ -111,18 +114,21 @@ titlescreenDraw 	SUBROUTINE
 
 .drawP1vsP2Selection:
 	DRAW_CHIP 	COLOR_RED, 23, 33, COLOR_GREEN
-	DRAW_CHIP	COLOR_GREEN, 23, 42, COLOR_GREEN
+	DRAW_CHIP	COLOR_GREEN, 18, 42, COLOR_GREEN
 	jmp 	.waitButtonPressOpponent
 
 .drawP1vsAISelection:
 	DRAW_CHIP 	COLOR_GREEN, 23, 33, COLOR_GREEN
-	DRAW_CHIP	COLOR_RED, 23, 42, COLOR_GREEN
+	DRAW_CHIP	COLOR_RED, 18, 42, COLOR_GREEN
 
 .waitButtonPressOpponent:
-	WAIT_BUTTON_PRESS	%10001100, 1
-
+	WAIT_BUTTON_PRESS	%10001100, 0
 	ni 		%10001100
 	bnz 	.handleInputOpponent
+
+	; randomize seed
+	SETISAR RANDOM_GENERATOR
+	ds 		S
 
     jmp 	.opponentSelect.loop
 

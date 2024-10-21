@@ -139,7 +139,7 @@ gameover    SUBROUTINE
 	; display AI or P2 wins
 	GET_AI
 	bz 		.p2WinsMatchDisplay
-	dci 	gfx.aiwinsmatch.parameters
+	dci 	gfx.compwinsmatch.parameters
 	pi 		blitGraphic
 	jmp 	.waitButtonPress
 .p2WinsMatchDisplay:

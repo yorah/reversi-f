@@ -58,7 +58,8 @@ BOARD_STATE 		= 32	; 16 bytes for the board state, ranging from r32 to r47
 PLAYER1_SCORE		= 48	; player 1 score
 PLAYER2_SCORE		= 49	; player 2 score
 GAME_SCORE			= 50	; game score (for best of 3 or best of 5)
-; 51-62 are used for the kstack, 63 is the stack pointer, that allows for 6 levels of subroutine calls
+RANDOM_GENERATOR	= 51	; random generator register
+; 53-62 are used for the kstack, 63 is the stack pointer, that allows for 6 levels of subroutine calls
 
 
 ;******************************************************************************

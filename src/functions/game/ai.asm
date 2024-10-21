@@ -142,9 +142,36 @@ aiNextMove    SUBROUTINE
 	ai 		1
 	as 		S
 
-	bz		.nextSlot	; if 0, then score are equal (TODO: randomize if we take the new one or not)
+	bz		.keepOrContinue	; if 0, then score are equal, randomly take the new one or not
 	bp 		.nextSlot	; if positive, then we already have the best score
+	jmp 	.storeValidMove
 
+.keepOrContinue:
+	; LFSR implementation from: https://channelf.se/veswiki/index.php?title=Snippet:Pseudorandom_numbers
+	SETISAR RANDOM_GENERATOR
+	clr
+	as 		S
+	bz 		.doEor
+	lr 		2, A
+	sl 		1
+	lr 		S, A
+	bz 		.noEor
+
+	; XOR if b7 was 1, no carry on sl
+	lr 		A, 2
+	ni 		%10000000
+	bz 		.noEor
+
+.doEor:
+	lr 		A, S
+	xi 		$e7
+	lr 		S, A
+
+.noEor:
+	; if b7 is 1 (> 128), then keep the new score
+	ni 		%10000000
+	bz 		.nextSlot	; if 0, then keep the old score
+	
 	; store the new best score
 .storeValidMove:
 	lr 		A, 9
