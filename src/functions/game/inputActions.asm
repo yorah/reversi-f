@@ -7,21 +7,24 @@ inputPlaceChip:
 	pi 		placeChipIfValid
 	ci 		0
 	bnz 	.updatePlayerTurnJmp
+
+	INVALID_MOVE_SOUND
+
     MAP_ACTION_RETURN 0, handleInput.continuations
 .updatePlayerTurnJmp:
 	jmp 	updatePlayerTurn
 
 moveUp:
-	CLEAR_SELECTION
+	pi 		moveDecorum
 	UPDATE_Y_POSITION $ff, 1
 moveDown:
-	CLEAR_SELECTION
+	pi 		moveDecorum
 	UPDATE_Y_POSITION $01, 1
 moveLeft:
-	CLEAR_SELECTION
+	pi 		moveDecorum
 	UPDATE_X_POSITION $ff, 1
 moveRight:
-	CLEAR_SELECTION
+	pi 		moveDecorum
 	UPDATE_X_POSITION $01, 1
 
 noInput:
@@ -35,6 +38,25 @@ updatePlayerTurn
 	lr 		S, A
 
     MAP_ACTION_RETURN 2, handleInput.continuations
+
+
+;******************************************************************************
+;* Stuff done when moving the cursor (audio, graphics...)
+;******************************************************************************
+moveDecorum:
+moveDecorum 	SUBROUTINE
+
+	lr 		K, P
+	pi      kstack.push
+
+	CLEAR_SELECTION
+
+	MOVE_SOUND
+
+.moveDecorumEnd:
+	pi 		kstack.pop
+	pk
+
 
 ;******************************************************************************
 ;* PLACE CHIP IF VALID MOVE

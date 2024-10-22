@@ -257,7 +257,7 @@ aiNextMove    SUBROUTINE
 	jmp 	.moveXToRight
 
 .moveXtoLeft:
-	CLEAR_SELECTION
+	pi  	moveDecorum
 	UPDATE_X_POSITION $ff, 0
 	SETISAR 16
 	ds 		S
@@ -271,7 +271,7 @@ aiNextMove    SUBROUTINE
 	jmp 	.moveX
 
 .moveXToRight
-	CLEAR_SELECTION
+	pi		moveDecorum
 	UPDATE_X_POSITION $01, 0
 	SETISAR 16
 	lr 		A, S
@@ -304,7 +304,7 @@ aiNextMove    SUBROUTINE
 	jmp 	.moveYToBottom
 
 .moveYToTop:
-	CLEAR_SELECTION
+	pi 		moveDecorum
 	UPDATE_Y_POSITION $ff, 0
 	SETISAR 17
 	ds 		S
@@ -318,7 +318,7 @@ aiNextMove    SUBROUTINE
 	jmp 	.moveY
 
 .moveYToBottom:
-	CLEAR_SELECTION
+	pi 		moveDecorum
 	UPDATE_Y_POSITION $01, 0
 	SETISAR 17
 	lr 		A, S

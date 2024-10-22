@@ -276,6 +276,7 @@ flipChipsInDirection	SUBROUTINE
 	lr 		6, A	; store 1 to mark valid move
 	jmp 	flipChipsInDirection.end
 .callPlaceChip:
+	PLACE_CHIP_SOUND
 	pi      updateBoardAndDrawChip
 	; animate chip flipping
 	li		128
@@ -323,6 +324,7 @@ flipChipsInDirection	SUBROUTINE
 	pi 		getSlotContent
 	RESTORE_PARAM  4, 20
 
+	PLACE_CHIP_SOUND
 	pi 		updateBoardAndDrawChip
 
 	; animate chip flipping
@@ -376,7 +378,10 @@ flipChipsInDirection	SUBROUTINE
 	RESTORE_PARAM  7, 23
 
 	ds 		10		; decrement number of chips to flip
-	bnz 	.flipChips.loop	; loop until all chips are flipped
+	bnz 	.flipChips.loop.jmp	; loop until all chips are flipped
+	jmp     flipChipsInDirection.end
+.flipChips.loop.jmp:
+	jmp 	.flipChips.loop
 
 flipChipsInDirection.end:
 	RESTORE_PARAM 0, 16	; restore initial X

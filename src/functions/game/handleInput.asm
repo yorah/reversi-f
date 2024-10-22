@@ -52,7 +52,6 @@ handleInput     SUBROUTINE
 	bnz 	.handleInputNext	; if button pressed, no need to read other controller
 	jmp 	.skip
 
-
 .waitForPressButtonInputOnly:
 	WAIT_BUTTON_PRESS	%10000000, 0
 	ni 		%10000000
@@ -107,6 +106,7 @@ handleInput     SUBROUTINE
 	jmp     .placeChip
 
 .updatePlayerTurnBranch:
+	PLACE_CHIP_SOUND	; sound for placing chip (here, we are skipping)
 	MAP_ACTION_RETURN 1, handleInputEnd
 .placeChip:
 	MAP_ACTION_RETURN 2, handleInputEnd

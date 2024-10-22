@@ -13,8 +13,7 @@
 ; pacman port by Blackbird and e5frog).
 ;
 ; IDEAS FOR IMPROVEMENT
-; use snail pattern to check if valid move exists (more efficient, although not necessary...)
-; play "bad" sound if invalid move
+; use snail pattern to check if valid move exists (more efficient, although not necessary given that moves are almost instant...)
 ;
 
     processor f8
@@ -29,6 +28,7 @@
 	include "src/macros/playerstate.h"
 	include "src/macros/gamestate.h"
 	include "src/macros/gamemode.h"
+	include "src/macros/sound.h"
 
 ; Configuration
 GAME_SIZE 			= 8		; size in KB

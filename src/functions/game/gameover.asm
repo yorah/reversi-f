@@ -16,6 +16,7 @@ gameover    SUBROUTINE
     lr     K, P
     pi     kstack.push
 
+
 	; game over, find winner
 	SETISAR PLAYER2_SCORE
 	lr 		A, S
@@ -90,7 +91,7 @@ gameover    SUBROUTINE
 	lr 		A, S
 	ni 		%00001111	; maskout P1 score, only keep P2 score
 	ci 		%00000001	; check if P2 score is 1, in which case P2 won the match
-	bz 		.p2WinsMatch
+	bz 		.p2WinsMatchJmp
 	lr 		A, S
 	ni 		%11110000	; maskout P2 score, only keep P1 score
 	ci 		%00010000	; check if P1 score is 1, in which case P1 won the match
@@ -106,7 +107,9 @@ gameover    SUBROUTINE
 	lr 		A, S
 	ni 		%00001111	; maskout P1 score, only keep P2 score
 	ci 		%00000011	; check if P2 score is 3, in which case P2 won the match
-	bz 		.p2WinsMatch
+	bz 		.p2WinsMatchJmp
+	br 		.bo5Check.continue
+.bo5Check.continue:
 	lr 		A, S
 	ni 		%11110000	; maskout P2 score, only keep P1 score
 	ci 		%00110000	; check if P1 score is 3, in which case P1 won the match
@@ -130,10 +133,14 @@ gameover    SUBROUTINE
 	lis 	1
 	lr 		11, A
 	jmp 	.waitButtonPress
+	
+.p2WinsMatchJmp:
+	jmp     .p2WinsMatch
 
 .p1WinsMatch:
 	dci 	gfx.p1winsmatch.parameters
 	pi 		blitGraphic
+	WINNING_SOUND 0
 	jmp 	.waitButtonPress
 .p2WinsMatch:
 	; display AI or P2 wins
@@ -141,10 +148,12 @@ gameover    SUBROUTINE
 	bz 		.p2WinsMatchDisplay
 	dci 	gfx.compwinsmatch.parameters
 	pi 		blitGraphic
+	WINNING_SOUND 1
 	jmp 	.waitButtonPress
 .p2WinsMatchDisplay:
 	dci 	gfx.p2winsmatch.parameters
 	pi 		blitGraphic
+	WINNING_SOUND 0
 	jmp 	.waitButtonPress
 
 .waitButtonPress:
