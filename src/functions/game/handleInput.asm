@@ -5,7 +5,7 @@
 ; which will do the actual action based on the input.
 ;
 ; Returns in A (used for input.actions JMP Table):
-;   0 if no button pressed
+;   0 if no button pressed/debounce in progress
 ;   1 if button pressed, and current player has to skip
 ;   2 if button pressed, and current player places a chip
 ;   3 if up direction
@@ -32,9 +32,26 @@ handleInput     SUBROUTINE
 	jmp 	.waitForPressButtonInputOnly
 
 .waitForAllInput:
-	WAIT_BUTTON_PRESS	%10001111, 0
-	ni 		%10001111
-	br 		.handleInputNext
+	; if debounce flag is set, wait for it to be cleared
+	SETISAR PLAYER_STATE
+	lr 		A, S
+	ni 		%00000010
+	bnz 	.skip
+
+	clr
+	outs 	0		; enable input from controllers (related to bit6 of port0?)
+	outs	1		; clear port1 (right controller	)
+	ins   	1		; read right controller first (requires half the CPU cycles than reading left controller on port 4 
+	com				; invert bits, so that 1 means button pressed
+	ni 		%10001111	; mask out twists and pullup
+	bnz 	.handleInputNext	; if button pressed, no need to read other controller	
+	outs 	4		; clear port4 (left controller)
+	ins  	4		; read left controller
+	com				; invert bits, so that 1 means button pressed
+	ni 		%10001111	; mask out twists and pullup
+	bnz 	.handleInputNext	; if button pressed, no need to read other controller
+	jmp 	.skip
+
 
 .waitForPressButtonInputOnly:
 	WAIT_BUTTON_PRESS	%10000000, 0
@@ -47,9 +64,6 @@ handleInput     SUBROUTINE
     MAP_ACTION_RETURN 0, handleInputEnd
 
 .handleInput:
-	; reset selection/skip colors/timers (provides a nice feedback to the player that
-    ; his input was registered). We have to use r10 as r0-r9 are used in CLEAR_SELECTION
-    ; by the blitGraphic routine
 	lr 		10, A   ; save A in r10 (contains the input value)
 	SETISAR PLAYER_STATE
 	GET_PLAYER_TURN
@@ -63,6 +77,11 @@ handleInput     SUBROUTINE
 	lr 		S, A
 	DRAW_SELECTION
 
+    ; set debounce flag to prevent too fast input
+	SETISAR PLAYER_STATE
+	lr 		A, S
+	oi 		%00000010
+	lr 		S, A
 	lr 		A, 10   ; restore A from r10 (to the input value)
 
 	; button pressed

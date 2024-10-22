@@ -52,6 +52,7 @@ GAME_STATE			= 30	; holds the counter for blinking effect (selection
 							; 00 player can play, 01 player has to skip, 10 game over
 PLAYER_STATE 		= 31	; first (higher) 3 bits are the X selection position
 							; next 3 bits are the Y selection position
+							; next 1 bit is the debounce flag (to prevent too fast input)
 							; last bit is the player turn (0 = player 1, 1 = player 2)
 BOARD_STATE 		= 32	; 16 bytes for the board state, ranging from r32 to r47
 							; corresponding to ISAR 40-47 and 50-57

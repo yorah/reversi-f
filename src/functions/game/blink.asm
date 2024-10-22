@@ -10,8 +10,16 @@ blinkUpdate     SUBROUTINE
     DECREASE_BLINKING_COUNTER
 	ci		0
 	bz 		.switchColor
+	ci 	    1
+	bz      .debounceEnd
+	jmp     .blinkUpdateEnd
+.debounceEnd
+	; clear debounce flag just before switching colors (to avoid flickering)
+	SETISAR PLAYER_STATE
+	lr 		A, S
+	ni 		%11111101
+	lr 		S, A
     jmp     .blinkUpdateEnd
-	;jmp 	blinkDelay.loop
 
 .switchColor:
 	; reset the blinking counter to blink_loops count
@@ -31,6 +39,7 @@ blinkUpdate     SUBROUTINE
 	pi  	setBlinkColorToPlayerColor
 
 .blinkUpdateEnd:
+
     pi     kstack.pop
     pk
 
