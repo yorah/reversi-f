@@ -76,10 +76,6 @@ canPlayerMove 	SUBROUTINE
 	lr 		K, P
 	pi      kstack.push
 
-	; prepare return value
-	lis 	0
-	lr 		10, A	; store 0 in r10 to indicate no valid move found by default
-
 	; Set initial X and Y to 7
 	lis 	7
 	lr    	0, A	; store 7 in r0, initial X=7
@@ -151,8 +147,6 @@ canPlayerMove 	SUBROUTINE
 	lr 		5, A
 	pi 		flipChipsInDirection
 	IS_VALID_MOVE_FOUND
-	
-	; if we went so far, no valid move yet
 
 .noValidMove:
 	; continue looping to find if there is a valid move
@@ -166,6 +160,9 @@ canPlayerMove 	SUBROUTINE
 	lr 		A, 1
 	ci 		$ff
 	bnz     .loopBack	; loop until Y=0
+	; if we went so far, no valid move found
+	lis 	0
+	lr 		10, A
 	jmp 	.canPlayerMoveEnd
 
 .loopBack:
