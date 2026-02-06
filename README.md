@@ -20,7 +20,7 @@ To Build and Run the game in MAME, execute _make.bat
 This code certainly ain't pretty. It started as a small experiment, out
 of curiosity for the F8 processor and the Fairchild ChannelF, and I didn't
 really anticipate the time I would spend on it. I learned a few things
-along the way, some of whom I shared in the [Random thoughts] (RANDOM_THOUGHTS.md) file.
+along the way, some of which I shared in the [Random thoughts] (RANDOM_THOUGHTS.md) file.
 
 I also really wanted to have a working version which does not use the SCHACH
 RAM (additional RAM), so everything had to work with only the 64 8bits
