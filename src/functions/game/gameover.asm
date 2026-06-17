@@ -76,64 +76,32 @@ gameover    SUBROUTINE
 
 	pi  	updateBoScoreInSidebar
 
-	GET_GAMEMODE
-	ci  	GAMEMODE_QUICKGAME
-	bz 		.bo1Check
+	; check if match is over. The required number of round wins equals
+	; (gamemode + 1): quickgame(0)->1, Bo3(1)->2, Bo5(2)->3. The P2 win
+	; threshold lives in the low nibble of GAME_SCORE, the P1 threshold in
+	; the high nibble (= P2 threshold << 4). Derive both from the gamemode
+	; instead of duplicating one check block per mode.
+	GET_GAMEMODE			; A = gamemode (0/1/2)
+	inc 					; A = round wins needed (1/2/3) = P2 threshold
+	lr 		1, A			; r1 = P2 threshold (low nibble)
+	sl 		4				; A = threshold << 4 = P1 threshold
+	lr 		2, A			; r2 = P1 threshold (high nibble)
 
-	ci 		GAMEMODE_BO3
-	bz 		.bo3Check
-	br 		.bo5Check
-.bo1Check:
-	; check if match is over
 	lis 	0
-	lr 		11, A
+	lr 		11, A			; default: match over
 	SETISAR GAME_SCORE
 	lr 		A, S
-	ni 		%00001111	; maskout P1 score, only keep P2 score
-	ci 		%00000001	; check if P2 score is 1, in which case P2 won the match
-	bz 		.p2WinsMatchJmp
+	ni 		%00001111		; maskout P1 score, only keep P2 score
+	xs 		1				; equal to P2 threshold? (Z set if so)
+	bz 		.p2WinsMatchJmp	; P2 won the match
 	lr 		A, S
-	ni 		%11110000	; maskout P2 score, only keep P1 score
-	ci 		%00010000	; check if P1 score is 1, in which case P1 won the match
-	bz 		.p1WinsMatch
+	ni 		%11110000		; maskout P2 score, only keep P1 score
+	xs 		2				; equal to P1 threshold? (Z set if so)
+	bz 		.p1WinsMatch	; P1 won the match
 	lis 	1
-	lr 		11, A
+	lr 		11, A			; match continues
 	jmp 	.waitButtonPress
-.bo5Check:
-	; check if match is over
-	lis 	0
-	lr 		11, A
-	SETISAR GAME_SCORE
-	lr 		A, S
-	ni 		%00001111	; maskout P1 score, only keep P2 score
-	ci 		%00000011	; check if P2 score is 3, in which case P2 won the match
-	bz 		.p2WinsMatchJmp
-	br 		.bo5Check.continue
-.bo5Check.continue:
-	lr 		A, S
-	ni 		%11110000	; maskout P2 score, only keep P1 score
-	ci 		%00110000	; check if P1 score is 3, in which case P1 won the match
-	bz 		.p1WinsMatch
-	lis 	1
-	lr 		11, A
-	jmp 	.waitButtonPress
-.bo3Check:
-	; check if match is over
-	lis 	0
-	lr 		11, A
-	SETISAR GAME_SCORE
-	lr 		A, S
-	ni 		%00001111	; maskout P1 score, only keep P2 score
-	ci 		%00000010	; check if P2 score is 2, in which case P2 won the match
-	bz 		.p2WinsMatch
-	lr 		A, S
-	ni 		%11110000	; maskout P2 score, only keep P1 score
-	ci 		%00100000	; check if P1 score is 2, in which case P1 won the match
-	bz 		.p1WinsMatch
-	lis 	1
-	lr 		11, A
-	jmp 	.waitButtonPress
-	
+
 .p2WinsMatchJmp:
 	jmp     .p2WinsMatch
 
