@@ -70,7 +70,7 @@ alltogether.
 
 ---
 
-## BIOS_CLEAR_SCREEN and kstack
+## BCD arithmetic and sign status
 - *Date:* 2024-10-11
 - *Thought:* 
 

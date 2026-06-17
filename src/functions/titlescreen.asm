@@ -112,7 +112,7 @@ titlescreenDraw 	SUBROUTINE
 
 	MOVE_SOUND
 
-	lis 	0	; quick game mode is default selection
+	lis 	0	; first option (1P vs 2P) is default selection
 	lr 		11, A
 
 .opponentSelect.loop:

@@ -99,7 +99,7 @@ canPlayerMove 	SUBROUTINE
 	ci      $ff
 	bnz		.loopBack	; loop until X=0 
 	lis 	7
-	lr 		0, A	; store 7 in r10, initial X=7 (to check next line)
+	lr 		0, A	; store 7 in r0, initial X=7 (to check next line)
 	ds 		1		; decrement Y
 	lr 		A, 1
 	ci 		$ff

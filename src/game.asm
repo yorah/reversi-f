@@ -93,9 +93,8 @@ main:
 ;******************************************************************************
 ;* TITLE SCREEN
 ;******************************************************************************
-; displays the titlescreen
-; there could be options to choose from here (1 game, best of 3, 1p or 2p, etc)
-; for now, just a simple titlescreen, and then start a new game
+; displays the titlescreen, where the player selects the game mode
+; (quick game, best of 3, best of 5) and the opponent (1P vs 2P or 1P vs AI)
 
 titlescreen:
 	pi		titlescreen.draw

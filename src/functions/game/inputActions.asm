@@ -81,7 +81,7 @@ placeChipIfValid 	SUBROUTINE
 
 	; prepare return value
 	lis     0
-	lr 		10, A	; use r16 to indicate if chip was placed (0 = no, 1 = yes)
+	lr 		10, A	; use r10 to indicate if chip was placed (0 = no, 1 = yes)
 
 placeChipIfValid.isSlotEmpty:
 	; calculate index of wanted move
