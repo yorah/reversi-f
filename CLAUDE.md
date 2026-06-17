@@ -6,6 +6,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Reversi-F is an implementation of Reversi (Othello) for the **Fairchild Channel F / VES**, an early cartridge console powered by the **Fairchild F8** 8-bit processor. The whole game is written in F8 assembly and assembled with **dasm**. A deliberate design constraint: it runs with **no SCHACH RAM** — everything (game state *and* a software stack) lives in the F8's 64 8-bit scratchpad registers.
 
+**Cartridge ROM is small and fixed** — always favor compact, byte-conscious code; new features compete for very limited space. This build targets `GAME_SIZE = 8` KB (`src/game.asm:34`), with the cartridge mapped at `$0800` and the size enforced by the padding/signature at the end of `game.asm`. When size matters, prefer the smaller encoding (e.g. `BR` over `JMP` where range allows — see the F8 gotchas below).
+
+**Macros do NOT save ROM.** dasm `MAC`/`ENDM` macros expand inline at every invocation, so reusing a macro emits its code at each call site — it aids readability and single-sourcing but costs the same (or more) bytes as duplication. Only factoring shared code into a **called subroutine** (`pi`, returning via kstack/`pk`) actually reduces ROM, trading some call overhead for size. So "de-duplicate to save space" means *subroutine*, not *macro*; where the duplicated blocks differ only by a small action (e.g. the 8-direction scan), making it a real subroutine usually means driving that action from data (a table/loop) rather than per-call macro arguments.
+
+**ROM ceiling.** Cartridge ROM starts at `$0800` (the 2 KB BIOS is `$0000–$07FF`). A plain, unbanked cartridge has a contiguous window up to `$2800` (where Schach/cartridge RAM is conventionally mapped) → **8 KB max** — which is exactly what this build targets (`GAME_SIZE = 8` fills `$0800–$27FF`). Going beyond 8 KB requires a 3853 SMI + bank switching (mapping into `$3800`/`$7800`/`$B800`/`$F800`), up to the F8's 16-bit / 64 KB address space. Sources: VES Wiki [Schach RAM](https://channelf.se/veswiki/index.php?title=Schach_RAM) and [SABA Videoplay 20 disassembly](https://channelf.se/veswiki/index.php?title=Disassembly:SABA_Videoplay_20).
+
 ## Build & Run
 
 Requires [dasm](https://dasm-assembler.github.io/) (assembler) and [MAME](https://www.mamedev.org/) (emulator) on `PATH`. MAME needs the Channel F BIOS `channelf.zip` in `roms/` — it's found via `-rompath roms`, separate from the cartridge.
