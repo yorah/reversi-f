@@ -5,3 +5,17 @@ roms/channelf.zip
 cfg/
 bin/
 game.lst
+
+# Editor / OS noise
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+
+# MAME-generated runtime dirs
+nvram/
+snap/
+sta/
+diff/
+comments/
