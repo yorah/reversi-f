@@ -7,13 +7,30 @@ Use:
 - [dasm](https://dasm-assembler.github.io/) (to assemble the code)
 - [MAME](https://www.mamedev.org/) (if you want to run the compiled code)
 
-Those tools should be available in your PATH. If not, you will need to
-modify the .bat files referencing them.
+Those tools should be available in your PATH.
 
-You also need to put the ChannelF bios in the /roms folder (or it should
-be available to MAME one way or another).
+You also need to put the ChannelF bios `channelf.zip` in the `/roms` folder
+(or it should be available to MAME one way or another).
 
-To Build and Run the game in MAME, execute _make.bat
+### Windows
+
+`dasm` and `MAME` must be on your PATH (otherwise edit the `.bat` files).
+To Build and Run the game in MAME, execute `_make.bat`.
+
+### Linux / WSL (cross-platform)
+
+Build/run is driven by [mise](https://mise.jdx.dev/) tasks (defined in
+`.mise.toml`), which also work on macOS:
+
+```sh
+mise run compile   # assemble -> bin/game.bin (+ listing)
+mise run run       # launch the cartridge in MAME
+mise run make      # compile then run
+```
+
+Install the toolchain via your package manager, e.g. on Debian/Ubuntu (incl.
+WSL): `sudo apt-get install dasm mame`. On **WSL2** the MAME window is shown
+through WSLg, so no extra X server is needed on a recent Windows install.
 
 ## Disclaimer
 

@@ -1,0 +1,22 @@
+# Cross-platform build/run tasks for reversi-f.
+# Requires `dasm` and `mame` on PATH (see README -> Compiling & running).
+# Usage: `mise run compile`, `mise run run`, `mise run make`.
+
+[tasks.compile]
+description = "Assemble src/game.asm into bin/game.bin (+ listing)"
+run = [
+  "mkdir -p bin",
+  "dasm src/game.asm -f3 -obin/game.bin -lbin/game.lst",
+]
+
+[tasks.run]
+description = "Launch the compiled cartridge in MAME (Channel F)"
+# -rompath roms : where MAME finds the Channel F BIOS (channelf.zip)
+# -cart         : the assembled game cartridge
+# -debug        : open MAME debugger (matches the original _run.bat)
+run = "mame channelf -rompath roms -cart bin/game.bin -debug -window -effect sharp -resolution 800x455 -keepaspect"
+
+[tasks.make]
+description = "Compile then run"
+depends = ["compile"]
+run = "mise run run"
