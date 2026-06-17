@@ -26,29 +26,40 @@ project rule, never assert F8 opcode semantics from memory; consult the
   - `ds`/`as`/`inc` carry/zero semantics underpinning fill/draw loops (note `clearscreen`
     uses `bc` where `sidebar.draw` uses `ci/bnz` for the same operation).
 
-## Tier 2 — Refactors (maintainability)
+## Tier 2 — Refactors (maintainability; ROM only via subroutines)
+
+> **Note:** dasm macros expand inline at every call site, so converting duplication into a
+> *macro* improves single-sourcing but does **not** shrink ROM. Only a called **subroutine**
+> (`pi` + kstack return) reclaims space. Items below are split accordingly.
 
 - **De-duplicate the 8-direction scan (#1 refactor).** The unrolled 8-way board scan is
   copy-pasted 4× — `ai.asm:56-113`, `newturn.asm:92-149`, `inputActions.asm:106-155`, and
   the engine in `boardManipulation.asm` — differing only by the per-direction action.
-  Collapse into one macro parameterized by that action (~150 lines removed).
+  A shared *macro* would single-source it but save no ROM (still emitted 4×). To actually
+  reclaim space, make it one **subroutine** that loops over a direction-offset table, with
+  the per-direction action selected by a parameter (register/flag) — this also subsumes the
+  "snail pattern" idea noted in `game.asm`. Biggest ROM win available.
 - **Single-source the bit masks.** `PLAYER_STATE`/`GAME_STATE`/`GAME_MODE` masks
   (`%11100000`, `%00011100`, …) are duplicated across `gamestate.h`, `gamemode.h`,
   `playerstate.h`, and re-derived inline in `draw.h`'s `DRAW_SELECTION`. Define
   `PLAYER_STATE_X_MASK` etc. once (extend the enum-naming pattern already in `gamemode.h`).
+  *(Equates, not code — no ROM impact; pure maintainability.)*
 - **De-duplicate the title-screen menu state machine.** `titlescreen.asm` has two
   near-identical selection loops (gamemode `28-99` vs opponent `118-173`). Extract a
-  generic menu helper parameterized by item count + draw routine.
-- **BCD score helper.** The `$66` + `asd` score adjustment is repeated in
-  `boardManipulation.asm` (4 sites) and `gameover.asm` (2 sites). Extract one helper.
-- **Parameterize Bo-checks + unify the fill loop.** Collapse the three near-identical
-  Bo1/Bo3/Bo5 blocks (`gameover.asm:86-135`) into one threshold-parameterized routine; and
-  unify the screen-fill loop duplicated in `clearscreen` (drawing.inc) and `sidebar.draw`
-  (they currently use different termination idioms).
-- **Sound BEEP helper + turn-graphic dedup.** Add a `BEEP duration, tone` macro to
-  collapse the repeated `sound.h` envelope (esp. `WINNING_SOUND`); and replace the
-  duplicated player-turn → p1/p2 graphic selection in `newgame.asm:81-90` with a call to
-  `updateTurnInSidebar`.
+  generic menu **subroutine** parameterized by item count + draw routine — saves ROM, not
+  just source. (A macro here would not.)
+- **BCD score helper (subroutine).** The `$66` + `asd` score adjustment is repeated in
+  `boardManipulation.asm` (4 sites) and `gameover.asm` (2 sites). Factor into one called
+  subroutine to actually reclaim bytes.
+- **Parameterize Bo-checks + unify the fill loop (subroutines).** Collapse the three
+  near-identical Bo1/Bo3/Bo5 blocks (`gameover.asm:86-135`) into one threshold-parameterized
+  routine; unify the screen-fill loop duplicated in `clearscreen` (drawing.inc) and
+  `sidebar.draw` (currently different termination idioms). Both save ROM only as subroutines.
+- **Sound envelope helper + turn-graphic dedup.** The repeated `sound.h` envelope (esp.
+  `WINNING_SOUND`) is a candidate for a called subroutine taking tone/duration — a `BEEP`
+  *macro* would tidy source but save no ROM, so prefer a subroutine if size is the goal.
+  Separately, replace the duplicated player-turn → p1/p2 graphic selection in
+  `newgame.asm:81-90` with a call to `updateTurnInSidebar` (a clear ROM + clarity win).
 
 ## Tier 3 — Hygiene & polish
 
