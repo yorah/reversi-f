@@ -14,6 +14,18 @@ Status flags used throughout: **O** = Overflow, **Z** = Zero, **C** = Carry,
 bit5=Zero, bit4=Overflow, bit0=ICB (interrupt master enable)**
 ([F3850 datasheet](https://archive.org/stream/bitsavers_fairchildfralProcessingUnitdatasheet1982_5876308/Fairchild_-_F3850_Central_Processing_Unit_datasheet_-_1982_djvu.txt)).
 
+> **The Sign bit is *complementary* (inverted vs. the result's MSB).** S is **set
+> (1) when the result's high-order bit is 0** (i.e. the result is positive/zero in
+> two's complement) and **reset (0) when the high-order bit is 1** (negative). The
+> F8 Guide repeats this in every arithmetic example, e.g. "The high order bit of
+> the result is 1, so SIGN = 0" / "…is 0, so SIGN = 1" (§6.3, §6.5, §6.8). MAME
+> encodes it as `SET_SZ(n)`: `if (~n & 0x80) m_w |= S;` with the source comment
+> "note: the S flag is complementary". Consequently `bp` (branch if positive)
+> tests **S = 1**, and `bm` (branch if minus) tests **S = 0** — see the `bp`/`bm`
+> rows below.
+> Source: F8 Guide to Programming (1977) §6.3/§6.5/§6.8 (pp.6-3…6-7);
+> [MAME `f8.cpp` `SET_SZ`](https://github.com/mamedev/mame/blob/master/src/devices/cpu/f8/f8.cpp).
+
 ---
 
 ## Gotchas
@@ -55,14 +67,23 @@ These are the hard-won ones. Read this section before debugging low-level issues
   `RANDOM_THOUGHTS.md`.
 
 - **BCD arithmetic (`asd`) leaves the sign status unreliable.** `asd` does a
-  decimal (BCD) add; the documented status flags are computed from the *binary*
-  intermediate result, so S (and O) do not meaningfully reflect the BCD value.
+  decimal (BCD) add as three binary steps: (1) `$66` is pre-added to one operand,
+  (2) a *binary* add of the two operands records carry/intermediate-carry **and
+  sets all four status bits (O/Z/C/S) from this binary intermediate sum**, then
+  (3) a decimal-correction factor (`$AA`/`$A0`/`$0A`/`$00`) is added to produce the
+  final BCD value — *after* the status bits were already latched. So O and S
+  reflect the binary intermediate, not the BCD result, and are meaningless; only Z
+  and C are significant. The F8 Guide states this directly for AMD/ASD: "Statuses
+  modified: CARRY, ZERO / **Statuses not significant: OVF, SIGN**" and "Other
+  status indicators are modified, but their condition is not significant." MAME
+  implements exactly this: `do_add_decimal()` calls `CLR_OZCS(); do_add(...);
+  SET_SZ(tmp)` on the binary sum *before* applying the correction factor.
   This repo's `gameover.asm` compares scores by high nibble then low nibble instead
-  of trusting sign. `[UNVERIFIED — the exact reason S/O are meaningless for BCD is
-  not spelled out in the sources consulted; confirm against F8 Guide to Programming.
-  The empirical fact (sign unreliable after asd) is from RANDOM_THOUGHTS.md.]`
-  Source: `RANDOM_THOUGHTS.md`;
-  [VES Wiki Opcode](https://channelf.se/veswiki/index.php?title=Opcode).
+  of trusting sign.
+  Source: F8 Guide to Programming (1977), §6.4 AMD p.6-4 and §6.6 ASD p.6-5
+  ("status bits have the same significance as … AMD");
+  [MAME `f8.cpp` `do_add_decimal`](https://github.com/mamedev/mame/blob/master/src/devices/cpu/f8/f8.cpp);
+  `RANDOM_THOUGHTS.md`.
 
 - **`BIOS_CLEAR_SCREEN` ($00d0) fights the kstack.** The BIOS clear-screen
   (1) requires r31 = 0 to work correctly, and (2) uses the BIOS's *own* push/pop
@@ -104,31 +125,31 @@ noted. Logical-op flag detail (O/C cleared) is corroborated by the
 | `lis n` | 1 | Load short immediate (0–15) into A | — | Smallest way to load a small constant. |
 | `li n` | 2 | Load 8-bit immediate into A | — | |
 | `lisu i` / `lisl i` | 1 / 1 | Set upper / lower octal digit of ISAR | — | Pair of these = `SETISAR` macro (`src/ves.h`). |
-| `clr` | 1 | A ← 0 | — | `[UNVERIFIED — whether clr touches flags; opcode table lists no flags. Treat as none.]` |
+| `clr` | 1 | A ← 0 | — | **No status bits modified** (F8 Guide §6.9 p.6-7: "No status bits are modified"). In MAME `clr` is opcode `0x70` = `f8_lis(0)` (`m_a = 0`), which touches no flags. |
 | `ni n` | 2 | A ← A AND n | Z, S (O, C cleared) | |
 | `oi n` | 2 | A ← A OR n | Z, S (O, C cleared) | |
 | `xi n` | 2 | A ← A XOR n | Z, S (O, C cleared) | |
 | `ci n` | 2 | Compare immediate (A − n) | O, Z, C, S | **A unchanged**; flags only. Computed as `n + (~A) + 1`. |
 | `ai n` | 2 | A ← A + n (binary) | O, Z, C, S | |
 | `as r` | 1 | A ← A + (r) (binary) | O, Z, C, S | Add-from-scratchpad. |
-| `asd r` | 1 | A ← A + (r) (decimal/BCD) | O, Z, C, S | **Sign/Overflow unreliable for BCD** — see Gotchas. |
+| `asd r` | 1 | A ← A + (r) (decimal/BCD) | Z, C significant; O, S set but **not significant** | **Sign/Overflow meaningless for BCD** — flags are latched from the binary intermediate sum before the decimal correction. F8 Guide §6.6 p.6-5 ("same significance as AMD") + §6.4 p.6-4 ("not significant: OVF, SIGN"). See Gotchas. |
 | `ns r` | 1 | A ← A AND (r) | Z, S (O, C cleared) | AND-from-scratchpad. |
 | `xs r` | 1 | A ← A XOR (r) | Z, S (O, C cleared) | XOR-from-scratchpad; OR-substitute (see Gotchas). |
 | `ds r` | 1 | (r) ← (r) − 1 (i.e. + $FF) | O, Z, C, S | Decrement happens **in the scratchpad register**, not A. Sets Z when result 0; loop-counter friendly. |
 | `inc` | 1 | A ← A + 1 | O, Z, C, S | |
-| `com` | 1 | A ← A XOR $FF (ones-complement) | Z, S (O, C cleared) | `[UNVERIFIED — O/C exact effect; opcode table lists Z,C,S. Confirm.]` |
+| `com` | 1 | A ← A XOR $FF (ones-complement) | Z, S set from result; **O, C unconditionally cleared** | F8 Guide §6.11 p.6-8: "Statuses modified: ZERO, SIGN / Statuses reset: OVF, CARRY … unconditionally reset to 0". MAME `f8_com`: `m_a = ~m_a; CLR_OZCS(); SET_SZ(m_a)` (matches). |
 | `sl 1` / `sl 4` | 1 | Shift A left 1 / 4 bits | Z, C, S | Zeros shifted in. |
 | `sr 1` / `sr 4` | 1 | Shift A right 1 / 4 bits | Z, C, S | Logical shift, zeros in. |
 | `lm` | 1 | A ← (DC); DC ← DC + 1 | — | Load from memory via Data Counter, auto-increments DC. |
 | `am` | 1 | A ← A + (DC) (binary); DC++ | O, Z, C, S | Add-from-memory via DC. |
 | `dci nnnn` | 3 | DC ← nnnn (16-bit) | — | Set Data Counter for `lm`/`am`/`st`. |
-| `adc` | 1 | DC ← DC + A | — | Add A to Data Counter (table/sprite stepping). `[UNVERIFIED — whether adc affects flags; opcode table lists none. Treat as none.]` |
+| `adc` | 1 | DC ← DC + A | — | Add A to Data Counter (table/sprite stepping). A is treated as a **signed** byte (sign-extended). **No status bits modified** (F8 Guide §6.1 p.6-2: "No status bits are modified"). MAME `f8_adc` just routes A onto the data bus into DC0 via `ROMC_0A` and touches no flags. |
 | `br n` | 2 | Unconditional relative branch | — | Range −128…+127. Does **not** clobber A. |
 | `br7 n` | 2 | Branch if low-3-bits(ISAR) ≠ 7 | — | Loop terminator over an 8-byte window. |
 | `bz n` / `bnz n` | 2 | Branch if Zero / if not Zero | — | `bz`=`bt 4`, `bnz`=`bf 4`. |
 | `bc n` / `bnc n` | 2 | Branch if Carry / if no Carry | — | |
-| `bp n` | 2 | Branch if Positive (Sign set) | — | `[UNVERIFIED — exact Sign polarity (bp = sign bit set vs clear); confirm against F8 Guide to Programming.]` |
-| `bm n` | 2 | Branch if Minus | — | `[UNVERIFIED — sign polarity; confirm against F8 Guide to Programming.]` |
+| `bp n` | 2 | Branch if Positive | — | Taken when **S = 1**, i.e. result's high-order bit is 0 (positive/zero). The Sign bit is complementary (see top of doc). `bp` = `bt 1` (opcode `0x81`, tests mask S). F8 Guide §6.7 Table 6-3 p.6-6 ("Sign bit is set") + Table 6-5; MAME `f8_bt(1)`. |
+| `bm n` | 2 | Branch if Minus (negative) | — | Taken when **S = 0**, i.e. result's high-order bit is 1 (negative). `bm` = `bf 1` (opcode `0x91`, branch when masked status all reset). F8 Guide §6.7 Table 6-3 p.6-6 ("Sign bit is reset") + Table 6-4; MAME `f8_bf(1)`. |
 | `bt t,n` / `bf i,n` | 2 | Branch true / false on status mask | — | Generic conditional branch; `bz`/`bnz`/etc. are encodings of these. |
 | `jmp nnnn` | 3 | Absolute jump (PC0 ← nnnn) | — | **Clobbers A** (see Gotchas). |
 | `pi nnnn` | 3 | Call subroutine (save ret in PC1, jump) | — | **Clobbers A**. Pairs with `pop`/`pk` (see below). |
@@ -200,21 +221,40 @@ Consulted and used (all verified against these):
   <https://archive.org/stream/bitsavers_fairchildfralProcessingUnitdatasheet1982_5876308/Fairchild_-_F3850_Central_Processing_Unit_datasheet_-_1982_djvu.txt>
 - "Architecture and programming Fairchild Channel F" (br7 loop semantics, ISAR windows):
   <https://tech-in-japan.github.io/articles/467811/index.html>
+- **MAME F8 CPU core** (`f8.cpp`) — authoritative for the behavior this project's
+  emulator actually produces. Establishes the flag effects of `clr`/`com`/`adc`/`asd`
+  (`f8_com`, `f8_adc`, `do_add_decimal`), the complementary Sign bit (`SET_SZ`:
+  `if (~n & 0x80) m_w |= S;`), and the `bp`=`f8_bt(1)` / `bm`=`f8_bf(1)` branch tests:
+  <https://github.com/mamedev/mame/blob/master/src/devices/cpu/f8/f8.cpp>
+  (opcode→mnemonic mapping cross-checked in `f8dasm.cpp`: `CLR`=0x70, `COM`=0x18,
+  `ADC`=0x8e, `BP`=0x81, `BM`=0x91).
+- **F8 Guide to Programming (1977, Fairchild)** — bitsavers PDF (scanned, but carries
+  an OCR text layer; pages also render via the `Read` tool). The instruction-set
+  chapter (§6) is the primary reference for per-instruction status effects. Pages used:
+  §6.1 ADC p.6-2, §6.4 AMD p.6-4, §6.6 ASD p.6-5, §6.7 Branch (Tables 6-3/6-4/6-5)
+  pp.6-6…6-7, §6.9 CLR p.6-7, §6.11 COM p.6-8; complementary-sign examples in
+  §6.3/§6.5/§6.8:
+  <http://www.bitsavers.org/components/fairchild/f8/F8_Guide_To_Programming_1977.pdf>
 - In-repo prior knowledge: `RANDOM_THOUGHTS.md`, `CLAUDE.md`, `src/ves.h`, `src/game.asm`.
 
-Authoritative PDFs (could **not** be machine-read — scanned/JBIG2, no OCR layer);
-use them to clear the `[UNVERIFIED]` items by hand:
+Additional authoritative PDF (not needed to clear the items above, kept for reference):
 
 - **F8 User's Guide (1976, Fairchild)** — linked from the VES Wiki F8 page:
   <https://channelf.se/veswiki/images/1/1d/F8_User%27s_Guide_%281976%29%28Fairchild%29%28Document_67095665%29.pdf>
-- **F8 Guide to Programming (1977, Fairchild)** — bitsavers:
-  <http://www.bitsavers.org/components/fairchild/f8/F8_Guide_To_Programming_1977.pdf>
 
-### Open `[UNVERIFIED]` items to confirm against the F8 Guide to Programming
+### Open `[UNVERIFIED]` items
 
-1. The precise reason BCD `asd` makes Sign/Overflow meaningless (empirical fact is
-   solid; the mechanism is not sourced here).
-2. Exact flag effects of `clr` (assumed none), `com` (Z/C/S per opcode table — O
-   effect unclear), and `adc` (assumed none).
-3. Sign-branch polarity for `bp` (branch if positive) and `bm` (branch if minus) —
-   i.e. which Sign-bit value each tests.
+All three previously-open items are now **resolved** (confirmed by both the MAME
+`f8.cpp` core and the F8 Guide to Programming §6; the two sources agree):
+
+1. ~~BCD `asd` Sign/Overflow mechanism~~ — **resolved.** `asd`/`amd` latch all four
+   status bits from the *binary* intermediate sum (3-step BCD: pre-add `$66` → binary
+   add sets O/Z/C/S → decimal-correction factor applied *after*), so O and S are "not
+   significant"; only Z and C are meaningful. (F8 Guide §6.4/§6.6; MAME `do_add_decimal`.)
+2. ~~Flag effects of `clr`/`com`/`adc`~~ — **resolved.** `clr`: none. `com`: Z and S
+   set from result, O and C unconditionally reset. `adc`: none. (F8 Guide §6.9/§6.11/§6.1;
+   MAME `f8_com`/`f8_adc`/`f8_lis`.)
+3. ~~Sign-branch polarity~~ — **resolved.** The Sign bit is complementary: S=1 ⇔ MSB=0
+   (positive). `bp` (=`bt 1`) branches when **S=1**; `bm` (=`bf 1`) branches when
+   **S=0**. (F8 Guide §6.7 Table 6-3 + §6.3/§6.5 examples; MAME `f8_bt(1)`/`f8_bf(1)`,
+   `SET_SZ` "the S flag is complementary".)
