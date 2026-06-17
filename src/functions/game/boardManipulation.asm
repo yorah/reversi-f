@@ -4,6 +4,8 @@
 ; Updates the BOARD_STATE register with the new chip, and
 ; draws it on the screen. Used both to add a chip on the board,
 ; and to update existing ones (when flipping chips).
+; BOARD_STATE encoding (slot (X,Y) -> register/bit-pair, chip codes):
+; see the diagram in src/functions/newgame.asm. Chip codes: P1=%10, P2=%11.
 ; r0 = X position in board
 ; r1 = Y position in board
 ; r2 = slot register number
@@ -112,6 +114,8 @@ updateBoardAndDrawChip	SUBROUTINE
 ;* GET SLOT CONTENT
 ;******************************************************************************
 ; Get the content of a slot from BOARD_STATE
+; Encoding (index=Y*8+X; reg=32+index/4; bit-pair=(index%4)*2): see the
+; full diagram + chip-code legend in src/functions/newgame.asm.
 ; r0 = X position
 ; r1 = Y position
 ;
