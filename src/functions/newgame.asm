@@ -126,16 +126,7 @@ newgameInit 	SUBROUTINE
 	DRAW_CHIP PLAYER2_COLOR, 25, 28, COLOR_TRANSPARENT
 
 	; init sidebar (player turn)
-	SETISAR PLAYER_STATE
-	lr 		A, S
-	ni 		PLAYER_STATE_TURN_MASK
-	bnz 	.initSidebarPlayer2
-	dci 	gfx.p1.parameters
-	jmp 	.initSidebarEnd
-.initSidebarPlayer2:
-	dci 	gfx.p2.parameters
-.initSidebarEnd:
-	pi 		blitGraphic
+	pi 		updateTurnInSidebar
 
 	; init score in sidebar
 	pi 		updateScoreInSidebar
