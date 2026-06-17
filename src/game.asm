@@ -218,6 +218,7 @@ game.loop.end:
 	include "src/functions/sidebar.asm"
 	include "src/functions/titlescreen.asm"
 	include "src/functions/newgame.asm"
+	include "src/functions/sound.asm"
 
 	; include game functions
 	include "src/functions/game/newturn.asm"
