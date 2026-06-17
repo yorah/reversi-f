@@ -14,6 +14,9 @@ inputPlaceChip:
 .updatePlayerTurnJmp:
 	jmp 	updatePlayerTurn
 
+; VERIFIED: no fall-through. The `,1` final arg makes each UPDATE_*_POSITION macro
+; emit MAP_ACTION_RETURN, which ends in `jmp handleInput.continuations` (see input.h /
+; playerstate.h). So each handler terminates with a jmp; control never falls into the next.
 moveUp:
 	pi 		moveDecorum
 	UPDATE_Y_POSITION $ff, 1

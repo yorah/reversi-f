@@ -39,7 +39,9 @@ updateBoardAndDrawChip	SUBROUTINE
 	lr 		7, A		; store it in r7
 	lr 		A, 3		; load bit position from r3
 	lr 		6, A		; and store it in r6 oo to later shift r7 to the right position (with calls to DS/SL)
-	ni 		%11111111	; check if bit position is zero, in which case no need to shift
+	ni 		%11111111	; AND with all-ones: value unchanged, but sets Z from result (ni sets Z, see docs/f8-notes.md)
+; VERIFIED: Z from `ni` survives to the `bz` below. The intervening `lr A,7` is a pure
+; register move and affects NO status flags (docs/f8-notes.md), so Z still reflects r3==0.
 	lr 		A, 7		; load dynamic mask from r7
 	bz	 	.noShift
 	lr 		A, 4		; load bit from r4
@@ -147,7 +149,10 @@ getSlotContent	SUBROUTINE
 	lr 		2, A	; store register number in r2
 
 	lr 		A, 4	; load bit position from r4
-	ni 		%11111111	; check if byte is zero, in which case no need to shift
+	ni 		%11111111	; AND with all-ones: value unchanged, but sets Z from result (ni sets Z, see docs/f8-notes.md)
+; VERIFIED: Z from `ni` survives to the `bz` below. The intervening `lr A,2`, `lr IS,A`
+; and `lr A,S` are all pure register moves that affect NO status flags (docs/f8-notes.md),
+; so Z still reflects whether r4 (bit position) was 0.
 	lr		A, 2	; load register number from r2
 	lr		IS, A	; set ISAR to the register number
 	lr		A, S	; load byte from BOARD_STATE

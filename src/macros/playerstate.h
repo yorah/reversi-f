@@ -43,6 +43,7 @@
     xs		0
     lr		S, A
     IF {2} = 1
+        ; {2}=1 => emit MAP_ACTION_RETURN, which ends in `jmp` (terminates control flow)
         MAP_ACTION_RETURN 0, handleInput.continuations
     ENDIF
     ENDM

@@ -35,6 +35,8 @@
 .exit
     ENDM
 
+    ; Writes action code {1} into r0 (via A), then `jmp {2}`. The `jmp` terminates
+    ; control flow; the destination later does `lr A,0` to read the action code back.
     MAC MAP_ACTION_RETURN
     lis     {1}
     lr      0, A

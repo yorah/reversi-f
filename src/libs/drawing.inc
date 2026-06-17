@@ -79,10 +79,12 @@ plot:
 
 	; delay until it's fully updated
 	lis		6
-.plotDelay:	
+.plotDelay:
 	ai		$ff
 	bnz		.plotDelay
 
+; VERIFIED safe: plot is a leaf routine (no `pi` anywhere in its body), so PC1 still
+; holds the caller's return address from the `pi plot`. `pop` (PC0 <- PC1) returns correctly.
 	pop				; return from the subroutine
 
 ;===========;
@@ -99,11 +101,15 @@ plot:
 ; modifies: r1-r6, Q, DC
 
 blitGraphic:
-	; load six bytes from the parameters into r0-r5
+	; load six bytes from the parameters into r1-r6 (the comment "r0-r5" is misleading:
+	; ISAR starts at octal 01 = r1, and each `lr I,A` writes then post-increments ISAR)
+; VERIFIED r1..r6, no off-by-one: ISAR=1 (lisu0/lisl1). Each pass stores to current ISAR
+; then increments low digit; br7 loops while low digit != 7. Stores hit r1,r2,r3,r4,r5,r6
+; (ISAR goes 1->2->3->4->5->6->7); when ISAR low digit becomes 7, br7 falls through. = 6 regs.
 	lisu	0
 	lisl	1
 .blitGraphicGetParms:
-	lm   
+	lm
 	lr	I, A						; store byte and increase ISAR
 	br7	.blitGraphicGetParms		; not finished with the registers, loop
 
@@ -224,5 +230,9 @@ blit:
 	br	.blitRow				; branch
 
 .blitExit:
+; VERIFIED safe: blit is a leaf routine (no `pi` in its body), so PC1 is untouched.
+; Callers reach blit either by `pi blit` directly, or via `jmp blit` from blitGraphic
+; (also leaf) which preserves the original PC1 from the `pi blitGraphic`. Either way
+; `pop` (PC0 <- PC1) returns to the correct caller.
 	; return from the subroutine
 	pop

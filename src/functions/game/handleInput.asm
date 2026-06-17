@@ -121,6 +121,9 @@ handleInput     SUBROUTINE
 	MAP_ACTION_RETURN 6, handleInputEnd
  
 handleInputEnd:
+; VERIFIED: action code (0..6) arrives here in r0. Every MAP_ACTION_RETURN expands to
+; `lis n` / `lr 0,A` / `jmp ...` (see input.h), so r0 always holds the code on entry.
+; `lr A,0` reloads it (kstack.pop's `pi` clobbers A, so r0 must be reloaded after pop).
     pi 		kstack.pop
     lr      A, 0
     pk
