@@ -71,7 +71,7 @@ moveDecorum 	SUBROUTINE
 ; chip is not placed.
 ;
 ; Returns in A: 1 if chip was placed, 0 if not
-; Modified registers: r0-r6, r10, and all registers modified by flipChipsInDirection
+; Modified registers: r0-r6, r10, and all registers modified by scanAllDirections
 
 placeChipIfValid:
 placeChipIfValid 	SUBROUTINE
@@ -106,66 +106,14 @@ placeChipIfValid.isSlotEmpty:
 placeChipIfValid.hasChipsToFlip:
 	; r0 and r1 are still the X and Y positions
 	; r2 and r3 are the slot register and bit position (after calling getSlotContent)
-	lis 	0		; r6 set to zero, will be set to 1 if chip placed; only set on first direction checked
+	; PLACE mode (r6 = 0): scanAllDirections walks all 8 directions, placing the
+	; chip and flipping captured lines, and returns r10 = 1 if at least one
+	; direction was valid (chip placed), or 0 if the move was invalid.
+	lis 	0
 	lr 		6, A
-	; test right direction
-	lis 	1
-	lr 		4, A
-	lis 	0
-	lr 		5, A
-	pi 		flipChipsInDirection
-	; test right-up diagonal
-	lis 	1
-	lr 		4, A
-	li  	$ff
-	lr 		5, A
-	pi 		flipChipsInDirection
-	; test up direction
-	lis 	0
-	lr 		4, A
-	li	 	$ff
-	lr 		5, A
-	pi 		flipChipsInDirection
-	; test left-up diagonal
-	li	 	$ff
-	lr 		4, A
-	li	 	$ff
-	lr 		5, A
-	pi 		flipChipsInDirection
-	; test left direction
-	li 		$ff
-	lr 		4, A
-	lis	 	0
-	lr 		5, A
-	pi 		flipChipsInDirection
-	; test left-down diagonal
-	li 		$ff
-	lr 		4, A
-	lis	 	1
-	lr 		5, A
-	pi 		flipChipsInDirection
-	; test down direction
-	lis 	0
-	lr 		4, A
-	lis	 	1
-	lr 		5, A
-	pi 		flipChipsInDirection
-	; test down-right diagonal
-	lis 	1
-	lr 		4, A
-	lis	 	1
-	lr 		5, A
-	pi 		flipChipsInDirection
-
-	; check if move was valid and chip was placed
-	lr 		A, 6
-	ni 		%11111111
-	SETISAR 10
-	lr 		S, A
-	bz 		placeChipIfValid.end	; no chip placed, r6 still 0
-
-	lis 	1
-	lr 		10, A	; store 1 in r10 to indicate move was valid
+	pi 		scanAllDirections
+	; scanAllDirections already returns r10 = 1 if a chip was placed, 0 otherwise,
+	; which is exactly this routine's return value.
 
 placeChipIfValid.end:
 	pi 		kstack.pop

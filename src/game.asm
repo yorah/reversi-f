@@ -247,6 +247,9 @@ game.loop.end:
 	; ai data
 	include "src/data/ai.inc"
 
+	; 8-direction table (scanAllDirections)
+	include "src/data/directions.inc"
+
 ; Padding
 	org $800 + (GAME_SIZE * $400) - $16
 	.byte "yorah 2024"

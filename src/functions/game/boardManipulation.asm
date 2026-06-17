@@ -171,41 +171,93 @@ getSlotContent	SUBROUTINE
 
 
 ;******************************************************************************
-;* FLIP CHIPS IN DIRECTION
+;* SCAN ALL DIRECTIONS
 ;******************************************************************************
-; Tries to flip chips in a direction, and calls updateBoardAndDrawChip if it finds any
+; Walks all 8 directions from a candidate slot and, depending on the mode in r6,
+; either flips/places chips (PLACE), tells whether any valid direction exists
+; (EXISTS), or sums how many chips would flip across all directions (COUNT).
+;
+; This is the de-duplicated form of the old per-direction worker
+; (flipChipsInDirection): the 8-direction loop that the 3 callers
+; (ai / newturn / inputActions) used to unroll by hand now lives INSIDE here,
+; so each caller makes ONE pi call. The per-direction walk below is kept inline
+; (a loop body, NOT a sub-subroutine) so NO new kstack level is added.
+;
+; The 8 (dx,dy) pairs come from the directions table (src/data/directions.inc),
+; in the load-bearing order R,RU,U,LU,L,LD,D,DR. The loop index lives in r52
+; (a register that is otherwise completely unused in the codebase: the only
+; symbol with value 52 is BOARD_BOTTOM_Y, used solely as an immediate constant
+; in board.draw, never as a register). r52 survives the inner pi calls because
+; nothing those callees touch (kstack r53-62, r0-r9, DC) overlaps it.
+; The directions table is re-addressed into DC every iteration from the index,
+; because updateBoardAndDrawChip -> blit clobbers DC in PLACE mode.
+;
 ; r0 = initial X position
 ; r1 = initial Y position
 ; r2 = slot register number (used to call updateBoardAndDrawChip)
 ; r3 = slot bit position (used to call updateBoardAndDrawChip)
-; r4 = X direction
-; r5 = Y direction
-; r6 = call updateBoardAndDrawChip if zero; only do checks if 2; if 1, avoid calling updateBoardAndDrawChip multiple times but flip chips
+; r6 = mode:	0 = PLACE  (flip + place chips on every valid direction)
+;		2 = EXISTS (check only; short-circuit + return r10=1 on first valid direction)
+;		3 = COUNT  (check only; sum per-direction flip counts into r9 over all 8 directions)
+;		1 is the internal already-placed transient used during PLACE
 ; r7 = player turn (used to check if slot is player 1 or player 2)
+;	(r4/r5 are no longer caller inputs: dx/dy are fetched per direction from the table)
 ;
 ; modifies: r4-r5, r7-r10 (through updateBoardAndDrawChip call; r7 not modified if only checking)
-;			r0-r1 are preserved, r2-r3 too if needed (no chip flipped in this direction), r6 returned as 1 if updateBoardAndDrawChip was called
-;			r16-r26 (used to preserve params)
-; returns in r6: 1 if updateBoardAndDrawChip was called, or if r6 was 1 initially, to avoid calling it multiple times.
-;	Also serves to know if move was deemed valid, as it will be 0 if no chips were flipped on this direction
-;   or on previous directions checked
-; returns in r10: the number of chips that can be flipped in this direction (if only checking, with r6=2)
+;			r0-r1 are preserved on return, r6 mutated, r9 accumulated in COUNT mode
+;			r16-r25 (used to preserve params), r52 (loop index)
+; returns in r10:	EXISTS/PLACE -> 1 if a valid direction was found (chip placed / move valid), else 0
+;			COUNT -> per-direction flip count of the last direction (the running sum is in r9)
+; returns in r9 (COUNT only): the total number of chips that can be flipped across all 8 directions
 
-flipChipsInDirection:
-flipChipsInDirection	SUBROUTINE
+scanAllDirections:
+scanAllDirections	SUBROUTINE
 	lr 		K, P
 	pi      kstack.push
 
-	; preserve parameters passed
+	; preserve the constant params (origin X/Y, slot reg/bit, mode, turn).
+	; r4/r5 (dx/dy) are refreshed per direction inside the loop instead.
 	PRESERVE_PARAM 0, 16
 	PRESERVE_PARAM 1, 17
 	PRESERVE_PARAM 2, 18
 	PRESERVE_PARAM 3, 19
-	PRESERVE_PARAM 4, 20
-	PRESERVE_PARAM 5, 21
 	PRESERVE_PARAM 6, 22
 	PRESERVE_PARAM 7, 23
-	
+
+	; initialize the direction index (0..7)
+	lis 	0
+	SETISAR 52
+	lr 		S, A		; r52 = 0 (first direction)
+
+;------------------------------------------------------------------------------
+; TOP OF THE 8-DIRECTION LOOP
+;------------------------------------------------------------------------------
+scanAllDirections.dirLoop:
+	; reset X/Y to the slot origin, and slot reg/bit, for this direction
+	RESTORE_PARAM 0, 16
+	RESTORE_PARAM 1, 17
+	RESTORE_PARAM 2, 18
+	RESTORE_PARAM 3, 19
+	RESTORE_PARAM 6, 22		; restore mode (PLACE may have ridden r6 to 1 on a previous direction)
+	RESTORE_PARAM 7, 23
+
+	; fetch this direction's (dx,dy) fresh from the table.
+	; DC is reloaded every iteration (blit clobbers DC in PLACE mode), then
+	; advanced by index*2 bytes via adc, then two lm's read dx then dy.
+	dci 	directions
+	SETISAR 52
+	lr 		A, S		; load direction index
+	sl 		1			; index * 2 (2 bytes per entry: dx, dy)
+	adc					; DC += index*2  (adc treats A as signed; 0..14 fits)
+	lm					; A = dx ; DC++
+	lr 		4, A		; store dx in r4
+	lm					; A = dy ; DC++
+	lr 		5, A		; store dy in r5
+
+	; preserve dx/dy for restore after getSlotContent / updateBoardAndDrawChip
+	PRESERVE_PARAM 4, 20
+	PRESERVE_PARAM 5, 21
+
 	lis 	0
 	lr 		10, A		; store 0 in r10 (used to track if opponents chips were found)
 
@@ -231,7 +283,7 @@ flipChipsInDirection	SUBROUTINE
 	br		.checkSlotContent
 
 .noChipsToFlip:
-	jmp 	flipChipsInDirection.end
+	jmp 	scanAllDirections.nextDirection
 
 .checkSlotContent:
 	pi 		getSlotContent
@@ -273,17 +325,28 @@ flipChipsInDirection	SUBROUTINE
 .flipChips:
 	RESTORE_PARAM 0, 16	; restore initial X
 	RESTORE_PARAM 1, 17	; restore initial Y
-	lr 		A, 6	; r6 is 0 if we need to place chip, 2 if only checking (from canPlayerMove for instance), 1 if placeChip was called 
-					; and we need to avoid calling it multiple times
+	lr 		A, 6	; r6 mode: 0 = place chip; 1 = already placed (flip only);
+					; 2 = EXISTS (short-circuit on first valid direction);
+					; 3 = COUNT (sum per-direction flip counts, no placement)
 	ni 		%11111111
 	bz 		.callPlaceChip
-	ci 		2		; are we only checking, and not placing?
-	bz 		.validMoveExists	; if so, no need to place chip
+	ci 		2		; EXISTS: only checking for existence?
+	bz 		.validMoveExists	; if so, short-circuit and return r10=1
+	ci 		3		; COUNT: only summing flip counts?
+	bz 		.countDirection		; if so, add this direction's count and continue
 	jmp 	.flipChips.loop		; chip was already placed, keep loop until all existing chips are flipped
 .validMoveExists:
+	; EXISTS mode: a valid direction was found, return r10 = 1 immediately
 	lis 	1
-	lr 		6, A	; store 1 to mark valid move
-	jmp 	flipChipsInDirection.end
+	lr 		10, A	; r10 = 1 marks "a valid move exists"
+	jmp 	scanAllDirections.end
+.countDirection:
+	; COUNT mode: r10 holds the opponent-chip count for this valid direction.
+	; Add it into the running total in r9, then advance to the next direction.
+	lr 		A, 9
+	as 		10
+	lr 		9, A
+	jmp 	scanAllDirections.nextDirection
 .callPlaceChip:
 	PLACE_CHIP_SOUND
 	pi      updateBoardAndDrawChip
@@ -388,11 +451,40 @@ flipChipsInDirection	SUBROUTINE
 
 	ds 		10		; decrement number of chips to flip
 	bnz 	.flipChips.loop.jmp	; loop until all chips are flipped
-	jmp     flipChipsInDirection.end
+	jmp     scanAllDirections.nextDirection	; this direction done, advance
 .flipChips.loop.jmp:
 	jmp 	.flipChips.loop
 
-flipChipsInDirection.end:
+;------------------------------------------------------------------------------
+; END OF ONE DIRECTION -> advance the index and loop, or finish.
+; Reached after a direction completes (no valid line, or PLACE flip loop done,
+; or COUNT added its total). EXISTS short-circuits straight to .end instead.
+;------------------------------------------------------------------------------
+scanAllDirections.nextDirection:
+	SETISAR 52
+	lr 		A, S		; load direction index
+	inc					; next direction
+	lr 		S, A		; store it back in r52
+	ci 		8			; processed all 8 directions?
+	bz 		scanAllDirections.allDirectionsDone
+	jmp 	scanAllDirections.dirLoop	; loop back for the next direction
+
+scanAllDirections.allDirectionsDone:
+	; PLACE/EXISTS return r10 (1 = a valid direction / chip placed, else 0).
+	; In PLACE mode r6 rode to 1 if any direction placed; mirror that into r10.
+	; (EXISTS already returned r10=1 via short-circuit; COUNT leaves the sum in r9.)
+	RESTORE_PARAM 6, 22	; load back the (possibly mutated) mode
+	lr 		A, 6
+	ci 		1			; did PLACE place at least one chip (r6 == 1)?
+	bz 		.placeWasValid
+	lis 	0
+	lr 		10, A		; no chip placed / no valid direction -> r10 = 0
+	br 		scanAllDirections.end
+.placeWasValid:
+	lis 	1
+	lr 		10, A		; chip placed -> r10 = 1
+
+scanAllDirections.end:
 	RESTORE_PARAM 0, 16	; restore initial X
 	RESTORE_PARAM 1, 17	; restore initial Y
 	pi      kstack.pop

@@ -2,20 +2,6 @@
 ;* AI management
 ;******************************************************************************
 
-	MAC ADD_NEXT_MOVE_SCORE
-		lr 		A, 6
-		ci 		1
-		bnz 	.noChipsToFlip
-		; reset r6 to 2 for next direction
-		lis 	2
-		lr 		6, A
-		; r10 contains the number of chips that can be flipped in the tested direction
-		lr 		A, 9
-		as 		10
-		lr 		9, A
-.noChipsToFlip:
-	ENDM
-
 aiNextMove:
 aiNextMove    SUBROUTINE
     lr     K, P
@@ -23,7 +9,7 @@ aiNextMove    SUBROUTINE
 
 	SETISAR PLAYER_STATE
 	GET_PLAYER_TURN
-	lr 		7, A	; store player turn in r7	(for flipChipsInDirection)
+	lr 		7, A	; store player turn in r7	(for scanAllDirections)
 
     lis    0    ; reset the next move score
     SETISAR AI_NEXT_MOVE_SCORE
@@ -52,65 +38,13 @@ aiNextMove    SUBROUTINE
 
 .testSlotScore:
 	; Similarly to what is done in newturn.asm to check if a next valid move exists,
-	; we only need to check, not actually flip the chips
-	lis 	2		; r6 set to 2, will be set to 1 if chip placed; only set on first direction checked
+	; we only need to check, not actually flip the chips.
+	; COUNT mode (r6 = 3): scanAllDirections walks all 8 directions and sums the
+	; per-direction flip counts into r9 (which we reset to 0 above), preserving the
+	; load-bearing R,RU,U,LU,L,LD,D,DR order via src/data/directions.inc.
+	lis 	3
 	lr 		6, A
-	; test right direction
-	lis 	1
-	lr 		4, A
-	lis 	0
-	lr 		5, A
-	pi 		flipChipsInDirection
-	ADD_NEXT_MOVE_SCORE
-	; test right-up diagonal
-	lis 	1
-	lr 		4, A
-	li  	$ff
-	lr 		5, A
-	pi 		flipChipsInDirection
-	ADD_NEXT_MOVE_SCORE
-	; test up direction
-	lis 	0
-	lr 		4, A
-	li	 	$ff
-	lr 		5, A
-	pi 		flipChipsInDirection
-	ADD_NEXT_MOVE_SCORE
-	; test left-up diagonal
-	li	 	$ff
-	lr 		4, A
-	li	 	$ff
-	lr 		5, A
-	pi 		flipChipsInDirection
-	ADD_NEXT_MOVE_SCORE
-	; test left direction
-	li 		$ff
-	lr 		4, A
-	lis	 	0
-	lr 		5, A
-	pi 		flipChipsInDirection
-	ADD_NEXT_MOVE_SCORE
-	; test left-down diagonal
-	li 		$ff
-	lr 		4, A
-	lis	 	1
-	lr 		5, A
-	pi 		flipChipsInDirection
-	ADD_NEXT_MOVE_SCORE
-	; test down direction
-	lis 	0
-	lr 		4, A
-	lis	 	1
-	lr 		5, A
-	pi 		flipChipsInDirection
-	ADD_NEXT_MOVE_SCORE
-	; test down-right diagonal
-	lis 	1
-	lr 		4, A
-	lis	 	1
-	lr 		5, A
-	pi 		flipChipsInDirection
-	ADD_NEXT_MOVE_SCORE
+	pi 		scanAllDirections
 
 	; if score is 0 at that point, no chips to flip on this slot
 	lr 		A, 9

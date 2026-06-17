@@ -14,7 +14,7 @@ newturn     SUBROUTINE
     pi     kstack.push
 
     ; 1. check if current player has a valid move
-	; store player turn in r7 for canPlayerMove/flipChipsInDirection
+	; store player turn in r7 for canPlayerMove/scanAllDirections
 	SETISAR PLAYER_STATE
 	GET_PLAYER_TURN
 	lr 		7, A	; store player turn in r7	
@@ -60,15 +60,9 @@ newturn     SUBROUTINE
 ;******************************************************************************
 ; Check if there is a valid move on the board for the player set in r7
 ;
-; modifies: r0-r26 (through flipChipsInDirection call)
+; modifies: r0-r25, r52 (through scanAllDirections call)
 ;
 ; returns in A: 1 if valid move found, 0 if not
-
-	MAC IS_VALID_MOVE_FOUND
-		lr 		A, 6
-		ci 		1
-		bz 		canPlayerMove.validMoveFound
-	ENDM
 
 canPlayerMove:
 canPlayerMove 	SUBROUTINE
@@ -88,65 +82,15 @@ canPlayerMove 	SUBROUTINE
 	ni 		%00000011
 	bnz 	.noValidMove
 
-	; check if current slot would be a valid move
-	lis 	2		; r6 set to 2, will be set to 1 if chip placed; only set on first direction checked
+	; check if current slot would be a valid move.
+	; EXISTS mode (r6 = 2): scanAllDirections walks the 8 directions and
+	; short-circuits, returning r10 = 1 on the first valid direction (else 0).
+	lis 	2
 	lr 		6, A
-	; test right direction
-	lis 	1
-	lr 		4, A
-	lis 	0
-	lr 		5, A
-	pi 		flipChipsInDirection
-	IS_VALID_MOVE_FOUND
-	; test right-up diagonal
-	lis 	1
-	lr 		4, A
-	li  	$ff
-	lr 		5, A
-	pi 		flipChipsInDirection
-	IS_VALID_MOVE_FOUND
-	; test up direction
-	lis 	0
-	lr 		4, A
-	li	 	$ff
-	lr 		5, A
-	pi 		flipChipsInDirection
-	IS_VALID_MOVE_FOUND
-	; test left-up diagonal
-	li	 	$ff
-	lr 		4, A
-	li	 	$ff
-	lr 		5, A
-	pi 		flipChipsInDirection
-	IS_VALID_MOVE_FOUND
-	; test left direction
-	li 		$ff
-	lr 		4, A
-	lis	 	0
-	lr 		5, A
-	pi 		flipChipsInDirection
-	IS_VALID_MOVE_FOUND
-	; test left-down diagonal
-	li 		$ff
-	lr 		4, A
-	lis	 	1
-	lr 		5, A
-	pi 		flipChipsInDirection
-	IS_VALID_MOVE_FOUND
-	; test down direction
-	lis 	0
-	lr 		4, A
-	lis	 	1
-	lr 		5, A
-	pi 		flipChipsInDirection
-	IS_VALID_MOVE_FOUND
-	; test down-right diagonal
-	lis 	1
-	lr 		4, A
-	lis	 	1
-	lr 		5, A
-	pi 		flipChipsInDirection
-	IS_VALID_MOVE_FOUND
+	pi 		scanAllDirections
+	lr 		A, 10
+	ci 		1
+	bz 		canPlayerMove.validMoveFound
 
 .noValidMove:
 	; continue looping to find if there is a valid move
