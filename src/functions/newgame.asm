@@ -128,7 +128,7 @@ newgameInit 	SUBROUTINE
 	; init sidebar (player turn)
 	SETISAR PLAYER_STATE
 	lr 		A, S
-	ni 		%00000001
+	ni 		PLAYER_STATE_TURN_MASK
 	bnz 	.initSidebarPlayer2
 	dci 	gfx.p1.parameters
 	jmp 	.initSidebarEnd

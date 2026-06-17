@@ -30,7 +30,7 @@ newturn     SUBROUTINE
 	; if current player has to skip, check if next player has a valid move
 	; if not, that means end of game
 	lr      A, 7    ; get player turn
-	xi 		%00000001	; switch player turn
+	xi 		PLAYER_STATE_TURN_MASK	; switch player turn
 	lr 		7, A	; store next player turn in r7	
 
 	; check if next player can move

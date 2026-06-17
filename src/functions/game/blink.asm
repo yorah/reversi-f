@@ -17,7 +17,7 @@ blinkUpdate     SUBROUTINE
 	; clear debounce flag just before switching colors (to avoid flickering)
 	SETISAR PLAYER_STATE
 	lr 		A, S
-	ni 		%11111101
+	ni 		PLAYER_STATE_DEBOUNCE_CLEAR
 	lr 		S, A
     jmp     .blinkUpdateEnd
 

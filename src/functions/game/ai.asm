@@ -192,7 +192,7 @@ aiNextMove    SUBROUTINE
 	sl 		1
 	lr 		9, A
 	lr 		A, 11
-	ni 		%11100011	; clear Y position
+	ni 		PLAYER_STATE_Y_CLEAR	; clear Y position
 	xs 		9
 	lr   	11, A
 
@@ -225,14 +225,14 @@ aiNextMove    SUBROUTINE
 	lr 		S, A
 
 	lr 		A, 11
-    ni 		%11100000	; get X position
+    ni 		PLAYER_STATE_X_MASK	; get X position
     sr 		4
     sr 		1
 	SETISAR 18
 	lr 		S, A
 
     lr 		A, 11
-    ni 		%00011100	; get Y position
+    ni 		PLAYER_STATE_Y_MASK	; get Y position
     sr 		1
     sr 		1
 	SETISAR 19
@@ -338,7 +338,7 @@ aiNextMove    SUBROUTINE
 	; change player turn
 	SETISAR PLAYER_STATE
 	lr 		A, S
-	xi 		%00000001
+	xi 		PLAYER_STATE_TURN_MASK
 	lr 		S, A
 
 .aiNextMoveEnd:

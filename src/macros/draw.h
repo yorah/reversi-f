@@ -26,14 +26,14 @@
 	; calculate X position
 	SETISAR PLAYER_STATE
 	lr 		A, S
-	ni 		%11100000
+	ni 		PLAYER_STATE_X_MASK
 	sr		4
 	sr	    1
 	com
 	ai 		1
 	lr		2, A
 	lr 		A, S
-	ni 		%11100000
+	ni 		PLAYER_STATE_X_MASK
 	sr 		1
 	sr 		1
 	as 		2
@@ -42,13 +42,13 @@
 
 	; calculate Y position
 	lr 		A, S
-	ni 		%00011100
+	ni 		PLAYER_STATE_Y_MASK
 	sr		1			; Y*2 (sr2 + sl1)
 	com
 	ai 		1			; two complement to get -2Y
 	lr		3, A		; store -2Y in r3
 	lr 		A, S
-	ni 		%00011100
+	ni 		PLAYER_STATE_Y_MASK
 	sl 		1			; Y*8 (sr2 + sl3)
 	as 		3			; Y*8 - 2Y = 6Y
 	ai 		4			; Add top offset

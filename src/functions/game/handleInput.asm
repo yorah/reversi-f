@@ -25,7 +25,7 @@ handleInput     SUBROUTINE
 	bnz 	.waitForAllInput
 	SETISAR PLAYER_STATE
 	GET_PLAYER_TURN
-	ni 		%00000001
+	ni 		PLAYER_STATE_TURN_MASK
 	bz 		.waitForAllInput
 	GET_AI
 	bz 		.waitForAllInput
@@ -35,7 +35,7 @@ handleInput     SUBROUTINE
 	; if debounce flag is set, wait for it to be cleared
 	SETISAR PLAYER_STATE
 	lr 		A, S
-	ni 		%00000010
+	ni 		PLAYER_STATE_DEBOUNCE_MASK
 	bnz 	.skip
 
 	clr
@@ -79,7 +79,7 @@ handleInput     SUBROUTINE
     ; set debounce flag to prevent too fast input
 	SETISAR PLAYER_STATE
 	lr 		A, S
-	oi 		%00000010
+	oi 		PLAYER_STATE_DEBOUNCE_MASK
 	lr 		S, A
 	lr 		A, 10   ; restore A from r10 (to the input value)
 

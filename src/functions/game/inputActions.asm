@@ -37,7 +37,7 @@ updatePlayerTurn
 	; change player turn
 	SETISAR PLAYER_STATE
 	lr 		A, S
-	xi 		%00000001
+	xi 		PLAYER_STATE_TURN_MASK
 	lr 		S, A
 
     MAP_ACTION_RETURN 2, handleInput.continuations
