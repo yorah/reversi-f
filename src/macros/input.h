@@ -1,38 +1,21 @@
-; Wait for any button press on either controller
-; Arguments passed: pattern to match, 0/1 to indicate if waiting until a button is pressed or not
+; Wait for / poll a button press on either controller.
+; Arguments passed: {1} = pattern to match, {2} = 0 (poll once) / 1 (block until pressed).
+;
+; This is now a thin wrapper around the waitButtonPress / pollButtonPress
+; subroutine (src/functions/game/waitButtonPress.asm) — factored out to save ROM,
+; since dasm macros expand inline at every call site. It loads the mask into r1
+; and calls the matching entry point. Result is returned in A (and r10), exactly
+; as before. `pi` is safe at every current call site (all are inside kstack-based
+; subroutines that already preserve their own return; see the subroutine header).
 
     MAC WAIT_BUTTON_PRESS
-.waitButtonPress:
-    clr
-    outs 	0		; enable input from controllers (related to bit6 of port0?)
-    outs	1		; clear port1 (right controller	)
-    ins   	1		; read right controller first (requires half the CPU cycles than reading left controller on port 4 
-    com
-    ni      {1}
-    bnz 	.waitRelease	; if button pressed, no need to read other controller	
-    outs 	4		; clear port4 (left controller)
-    ins  	4		; read left controller
-    com
-    ni      {1}
-    bnz 	.waitRelease	; if button pressed, no need to read other controller
+    li      {1}
+    lr      1, A		; mask -> r1
     IF {2} = 0
-        br     .exit
+        pi  pollButtonPress
+    ELSE
+        pi  waitButtonPress
     ENDIF
-    br		.waitButtonPress
-.waitRelease:
-    lr      10, A
-    clr
-    outs    0
-    outs    1
-    ins     1
-    com
-    bnz     .waitRelease
-    outs    4
-    ins     4
-    com
-    bnz     .waitRelease
-    lr      A, 10
-.exit
     ENDM
 
     ; Writes action code {1} into r0 (via A), then `jmp {2}`. The `jmp` terminates

@@ -221,6 +221,7 @@ game.loop.end:
 	include "src/functions/sound.asm"
 
 	; include game functions
+	include "src/functions/game/waitButtonPress.asm"
 	include "src/functions/game/newturn.asm"
 	include "src/functions/game/gameover.asm"
 	include "src/functions/game/handleInput.asm"
