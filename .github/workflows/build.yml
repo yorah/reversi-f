@@ -1,0 +1,38 @@
+name: Build
+
+# Assemble the ROM on every push and PR. dasm exits non-zero if the source
+# fails to assemble or the code overflows the cartridge origin, so a green run
+# means the project still builds. There is no test suite (verification is by
+# running in MAME), so this is the mechanical safety net.
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  assemble:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dasm
+        run: sudo apt-get update && sudo apt-get install -y dasm
+
+      # Mirrors `mise run compile` (.mise.toml). Kept as a raw command so the
+      # job needs no mise/toolchain setup; keep the two in sync if flags change.
+      - name: Assemble
+        run: |
+          mkdir -p bin
+          dasm src/game.asm -f3 -obin/game.bin -lbin/game.lst
+
+      - name: Report ROM size
+        run: ls -l bin/game.bin
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rom
+          path: |
+            bin/game.bin
+            bin/game.lst
+          if-no-files-found: error
